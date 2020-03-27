@@ -1,16 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "bioplib/seq.h"
 #include "bioplib/sequtil.h"
 #include "bioplib/general.h"
+#include "bioplib/macros.h"
 
 #define MAXBUFF           256
+#define HUGEBUFF          1024
 #define CHAINTYPE_UNKNOWN 0
 #define CHAINTYPE_LIGHT   1
 #define CHAINTYPE_HEAVY   2
+#define AGLDATADIR        "mydata"
 
-#define CHAINTYPE(x) ( \
-   (x)==CHAINTYPE_LIGHT ? "Light" : \
+#define CHAINTYPE(x) (                            \
+   (x)==CHAINTYPE_LIGHT ? "Light" :               \
     ((x)==CHAINTYPE_HEAVY ? "Heavy" : "Unknown"))
 
 int main(int argc, char **argv);
@@ -18,6 +22,8 @@ void Usage(void);
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile);
 void ProcessSeq(FILE *out, char *seq);
 REAL ScanAgainstDB(char *type, char *seq, char *match);
+REAL CompareSeqs(char *theSeq, char *seq);
+
 
 
 
@@ -85,28 +91,62 @@ void ProcessSeq(FILE *out, char *seq)
 }
 
 /************************************************************************/
-REAL ScanAgainstDB(char *type, char *seq, char *match)
+REAL ScanAgainstDB(char *type, char *theSeq, char *match)
 {
-   if(!strncmp(type, "light_v",7))
-   {
-      return(100.0);
-   }
-   else if(!strncmp(type, "heavy_v",7))
-   {
-      return(80.0);
-   }
-   else if(!strncmp(type, "light_c",7))
-   {
-      return(20.0);
-   }
-   else if(!strncmp(type, "heavy_c",7))
-   {
-      return(30.0);
-   }
-   return(0.0);
+   char filename[MAXBUFF+1];
+   BOOL noEnv;
+   FILE *dbFp = NULL;
+   REAL maxScore = 0.0;
+   char bestMatch[MAXBUFF+1];
    
+   sprintf(filename, "%s/%s.dat", AGLDATADIR, type);
+   
+   if(dbFp = blOpenFile(filename, AGLDATADIR, "r", &noEnv))
+   {
+      char header[MAXBUFF+1];
+      char *seq = NULL;
+
+      while((seq = blReadFASTA(dbFp, header, MAXBUFF))!=NULL)
+      {
+         REAL score;
+
+         fprintf(stderr, "Comparing with %s\n", header);
+         
+         score = CompareSeqs(theSeq, seq);
+         if(score > maxScore)
+         {
+            maxScore = score;
+            strncpy(bestMatch, header, MAXBUFF);
+         }
+         
+         free(seq);
+      }
+      FCLOSE(dbFp);
+   }
+
+   strncpy(match, bestMatch, MAXBUFF);
+   return(maxScore);
 }
 
+/************************************************************************/
+REAL CompareSeqs(char *theSeq, char *seq)
+{
+   int score;
+   char align1[HUGEBUFF+1],
+      align2[HUGEBUFF+1];
+   int alignLen;
+   int shortSeqLen = MIN(strlen(theSeq), strlen(seq));
+   
+   score = blAlign(theSeq, strlen(theSeq),
+                   seq, strlen(seq),
+                   FALSE, /* verbose */
+                   TRUE,  /* identity */
+                   1,     /* penalty */
+                   align1,
+                   align2,
+                   &alignLen);
+   return ((REAL)score / (REAL)shortSeqLen);
+}
 
 /************************************************************************/
 /*>void Usage(void)

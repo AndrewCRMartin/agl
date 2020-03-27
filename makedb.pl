@@ -136,9 +136,14 @@ sub PrintTranslations
 
     for(my $frame=0; $frame < 3; $frame++)
     {
-        my $header = CreateHeader($info, $frame);
         my $aaSeq = Translate($sequence, $frame);
-        print $outFp "$header\n$aaSeq\n";
+
+        my $numStops = () = $aaSeq =~ /\*/g;
+        if($numStops < 2)
+        {
+            my $header = CreateHeader($info, $frame);
+            print $outFp "$header\n$aaSeq\n";
+        }
     }
 }
 
