@@ -12,6 +12,10 @@
 #define CHAINTYPE_LIGHT   1
 #define CHAINTYPE_HEAVY   2
 #define AGLDATADIR        "mydata"
+#define THRESHOLD_LV      0.5
+#define THRESHOLD_LC      0.5
+#define THRESHOLD_HV      0.5
+#define THRESHOLD_HC      0.5
 
 #define CHAINTYPE(x) (                            \
    (x)==CHAINTYPE_LIGHT ? "Light" :               \
@@ -20,7 +24,7 @@
 int main(int argc, char **argv);
 void Usage(void);
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verbose, int *chainType);
-void ProcessSeq(FILE *out, char *seq, BOOL verbose);
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *match);
 REAL CompareSeqs(char *theSeq, char *seq);
 
@@ -37,8 +41,8 @@ int main(int argc, char **argv)
    
    if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType))
    {
-      FILE *in= stdin,
-         *out = stdout;
+      FILE *in  = stdin,
+           *out = stdout;
    
       if(blOpenStdFiles(infile, outfile, &in, &out))
       {
@@ -47,7 +51,7 @@ int main(int argc, char **argv)
 
          if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
-            ProcessSeq(out, seq, verbose);
+            ProcessSeq(out, seq, verbose, chainType);
             free(seq);
          }
       }
@@ -66,30 +70,75 @@ int main(int argc, char **argv)
 
     
 /************************************************************************/
-void ProcessSeq(FILE *out, char *seq, BOOL verbose)
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
 {
-   int chainType = CHAINTYPE_UNKNOWN;
    char lvMatch[MAXBUFF+1],
        hvMatch[MAXBUFF+1],
        lcMatch[MAXBUFF+1],
       hcMatch[MAXBUFF+1];
-   REAL lvScore, hvScore, lcScore, hcScore;
-   
-   lvScore = ScanAgainstDB("light_v", seq, verbose, lvMatch);
-   hvScore = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
-   lcScore = ScanAgainstDB("light_c", seq, verbose, lcMatch);
-   hcScore = ScanAgainstDB("heavy_c", seq, verbose, hcMatch);
+   REAL lvScore = -1.0,
+      hvScore = -1.0,
+      lcScore = -1.0,
+      hcScore = -1.0;
 
-   if((lvScore > hvScore) || (lcScore > hcScore))
+   /* Find out what the chain type is if it isn't specified             */
+   if(chainType == CHAINTYPE_UNKNOWN)
    {
-      chainType = CHAINTYPE_LIGHT;
+      lvScore = ScanAgainstDB("light_v", seq, verbose, lvMatch);
+      hvScore = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
+      lcScore = ScanAgainstDB("light_c", seq, verbose, lcMatch);
+      hcScore = ScanAgainstDB("heavy_c", seq, verbose, hcMatch);
+
+      if((lvScore > hvScore) || (lcScore > hcScore))
+      {
+         chainType = CHAINTYPE_LIGHT;
+      }
+      else if((hvScore > lvScore) || (hcScore > lcScore))
+      {
+         chainType = CHAINTYPE_HEAVY;
+      }
+      fprintf(out, "Chain type: %s\n", CHAINTYPE(chainType));
    }
-   else if((hvScore > lvScore) || (hcScore > lcScore))
+
+   switch(chainType)
    {
-      chainType = CHAINTYPE_HEAVY;
+   case CHAINTYPE_LIGHT:
+      if(lvScore < 0.0)
+         lvScore = ScanAgainstDB("light_v", seq, verbose, lvMatch);
+      if(lcScore < 0.0)
+         lcScore = ScanAgainstDB("light_c", seq, verbose, lcMatch);
+
+      if(lvScore > THRESHOLD_LV)
+      {
+         fprintf(out, "V : %f : %s\n", lvScore, lvMatch);
+      }
+      if(lcScore > THRESHOLD_LC)
+      {
+         fprintf(out, "C : %f : %s\n", lcScore, lcMatch);
+      }
+      
+      break;
+   case CHAINTYPE_HEAVY:
+      if(hvScore < 0.0)
+         hvScore = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
+      if(hcScore < 0.0)
+         hcScore = ScanAgainstDB("heavy_c", seq, verbose, hcMatch);
+
+      if(hvScore > THRESHOLD_HV)
+      {
+         fprintf(out, "V : %f : %s\n", hvScore, hvMatch);
+      }
+
+      if(hcScore > THRESHOLD_HC)
+      {
+         fprintf(out, "C : %f : %s\n", hcScore, hcMatch);
+      }
+      
+      break;
+   default:
+      fprintf(stderr, "Can't identify chain type!\n");
+      exit (1);
    }
-   
-   fprintf(out, "Chain type: %s\n", CHAINTYPE(chainType));
 }
 
 /************************************************************************/

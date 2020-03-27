@@ -142,7 +142,10 @@ sub PrintTranslations
         if($numStops < 2)
         {
             my $header = CreateHeader($info, $frame);
-            print $outFp "$header\n$aaSeq\n";
+            if($header ne '')
+            {
+                print $outFp "$header\n$aaSeq\n";
+            }
         }
     }
 }
@@ -156,7 +159,11 @@ sub CreateHeader
     $species =~ s/\_.*//;  # Remove strain
     my $gene    = $fields[1];
     my $domain  = $fields[4];
-    my $header = ">${domain}_${gene}_F${frame}_$species";
+    my $header  = '';
+    if(($domain =~ /^CH/) || ($domain =~ /^[VCJ]-/))
+    {
+        $header = ">${domain}_${gene}_F${frame}_$species";
+    }
     return($header);
 }
 
