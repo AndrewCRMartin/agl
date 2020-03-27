@@ -19,9 +19,9 @@
 
 int main(int argc, char **argv);
 void Usage(void);
-BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile);
-void ProcessSeq(FILE *out, char *seq);
-REAL ScanAgainstDB(char *type, char *seq, char *match);
+BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verbose);
+void ProcessSeq(FILE *out, char *seq, BOOL verbose);
+REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *match);
 REAL CompareSeqs(char *theSeq, char *seq);
 
 
@@ -32,8 +32,9 @@ int main(int argc, char **argv)
 {
    char infile[MAXBUFF+1],
       outfile[MAXBUFF+1];
+   BOOL verbose = FALSE;
    
-   if(ParseCmdLine(argc, argv, infile, outfile))
+   if(ParseCmdLine(argc, argv, infile, outfile, &verbose))
    {
       FILE *in= stdin,
          *out = stdout;
@@ -45,7 +46,7 @@ int main(int argc, char **argv)
 
          if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
-            ProcessSeq(out, seq);
+            ProcessSeq(out, seq, verbose);
             free(seq);
          }
       }
@@ -64,7 +65,7 @@ int main(int argc, char **argv)
 
     
 /************************************************************************/
-void ProcessSeq(FILE *out, char *seq)
+void ProcessSeq(FILE *out, char *seq, BOOL verbose)
 {
    int chainType = CHAINTYPE_UNKNOWN;
    char lvMatch[MAXBUFF+1],
@@ -73,10 +74,10 @@ void ProcessSeq(FILE *out, char *seq)
       hcMatch[MAXBUFF+1];
    REAL lvScore, hvScore, lcScore, hcScore;
    
-   lvScore = ScanAgainstDB("light_v", seq, lvMatch);
-   hvScore = ScanAgainstDB("heavy_v", seq, hvMatch);
-   lcScore = ScanAgainstDB("light_c", seq, lcMatch);
-   hcScore = ScanAgainstDB("heavy_c", seq, hcMatch);
+   lvScore = ScanAgainstDB("light_v", seq, verbose, lvMatch);
+   hvScore = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
+   lcScore = ScanAgainstDB("light_c", seq, verbose, lcMatch);
+   hcScore = ScanAgainstDB("heavy_c", seq, verbose, hcMatch);
 
    if((lvScore > hvScore) || (lcScore > hcScore))
    {
@@ -91,7 +92,7 @@ void ProcessSeq(FILE *out, char *seq)
 }
 
 /************************************************************************/
-REAL ScanAgainstDB(char *type, char *theSeq, char *match)
+REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *match)
 {
    char filename[MAXBUFF+1];
    BOOL noEnv;
@@ -110,7 +111,10 @@ REAL ScanAgainstDB(char *type, char *theSeq, char *match)
       {
          REAL score;
 
-         fprintf(stderr, "Comparing with %s\n", header);
+         if(verbose)
+         {
+            fprintf(stderr, "Comparing with %s\n", header);
+         }
          
          score = CompareSeqs(theSeq, seq);
          if(score > maxScore)
@@ -164,19 +168,22 @@ void Usage(void)
 
 
 /************************************************************************/
-/*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile)
+/*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
+                     BOOL *verbose)
    ---------------------------------------------------------------------
    Input:   int      argc        Argument count
             char     **argv      Argument array
    Output:  char     *infile     Input filename (or blank string)
             char     *outfile    Output filename (or blank string)
+            BOOL     *verbose    Verbose
    Returns: BOOL                 Success
 
    Parse the command line
 
    26.03.20 Original    By: ACRM
 */
-BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile)
+BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
+                  BOOL *verbose)
 {
    argc--;
    argv++;
@@ -189,6 +196,9 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile)
       {
          switch(argv[0][1])
          {
+         case 'v':
+            *verbose = TRUE;
+            break;
          default:
             return(FALSE);
             break;
