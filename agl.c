@@ -19,7 +19,7 @@
 
 int main(int argc, char **argv);
 void Usage(void);
-BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verbose);
+BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verbose, int *chainType);
 void ProcessSeq(FILE *out, char *seq, BOOL verbose);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *match);
 REAL CompareSeqs(char *theSeq, char *seq);
@@ -33,8 +33,9 @@ int main(int argc, char **argv)
    char infile[MAXBUFF+1],
       outfile[MAXBUFF+1];
    BOOL verbose = FALSE;
+   int chainType = CHAINTYPE_UNKNOWN;
    
-   if(ParseCmdLine(argc, argv, infile, outfile, &verbose))
+   if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType))
    {
       FILE *in= stdin,
          *out = stdout;
@@ -169,13 +170,14 @@ void Usage(void)
 
 /************************************************************************/
 /*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                     BOOL *verbose)
+                     BOOL *verbose, int *chainType)
    ---------------------------------------------------------------------
    Input:   int      argc        Argument count
             char     **argv      Argument array
    Output:  char     *infile     Input filename (or blank string)
             char     *outfile    Output filename (or blank string)
             BOOL     *verbose    Verbose
+            int      *chainType  Chain type
    Returns: BOOL                 Success
 
    Parse the command line
@@ -183,7 +185,7 @@ void Usage(void)
    26.03.20 Original    By: ACRM
 */
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                  BOOL *verbose)
+                  BOOL *verbose, int *chainType)
 {
    argc--;
    argv++;
@@ -198,6 +200,16 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
          {
          case 'v':
             *verbose = TRUE;
+            break;
+         case 'l':
+            if(*chainType != CHAINTYPE_UNKNOWN)
+               return(FALSE);
+            *chainType = CHAINTYPE_LIGHT;
+            break;
+         case 'h':
+            if(*chainType != CHAINTYPE_UNKNOWN)
+               return(FALSE);
+            *chainType = CHAINTYPE_HEAVY;
             break;
          default:
             return(FALSE);
