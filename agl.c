@@ -13,10 +13,11 @@
 #define CHAINTYPE_HEAVY   2
 #define AGLDATADIR        "mydata"
 #define THRESHOLD_LV      0.5
+#define THRESHOLD_LJ      0.5
 #define THRESHOLD_LC      0.5
 #define THRESHOLD_HV      0.5
-#define THRESHOLD_HC      0.5
 #define THRESHOLD_HJ      0.5
+#define THRESHOLD_HC      0.5
 
 #define CHAINTYPE(x) (                            \
    (x)==CHAINTYPE_LIGHT ? "Light" :               \
@@ -75,6 +76,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
 {
    char lvMatch[MAXBUFF+1],
         hvMatch[MAXBUFF+1],
+        ljMatch[MAXBUFF+1],
         hjMatch[MAXBUFF+1],
         lcMatch[MAXBUFF+1],
         CH1Match[MAXBUFF+1],
@@ -82,6 +84,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
         CH3CHSMatch[MAXBUFF+1];
    REAL lvScore     = -1.0,
         hvScore     = -1.0,
+        ljScore     = -1.0,
         hjScore     = -1.0,
         lcScore     = -1.0,
         CH1Score    = -1.0,
@@ -119,6 +122,11 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
       if(lvScore > THRESHOLD_LV)
       {
          fprintf(out, "VL  : %f : %s\n", lvScore, lvMatch);
+         ljScore = ScanAgainstDB("light_j", seq, verbose, ljMatch);
+         if(ljScore > THRESHOLD_LJ)
+         {
+            fprintf(out, "JL  : %f : %s\n", ljScore, ljMatch);
+         }
       }
 
       if(lcScore > THRESHOLD_LC)
@@ -141,13 +149,10 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
       {
          fprintf(out, "VH  : %f : %s\n", hvScore, hvMatch);
          hjScore = ScanAgainstDB("heavy_j", seq, verbose, hjMatch);
-/*         if(hjScore > THRESHOLD_HJ)
- */
+         if(hjScore > THRESHOLD_HJ)
          {
             fprintf(out, "JH  : %f : %s\n", hjScore, hjMatch);
          }
-         
-
       }
 
       if(CH1Score > THRESHOLD_HC)
