@@ -78,26 +78,40 @@ my $outDir  = "./mydata";
 `mkdir -p $outDir`;
 
 my @files = GetFileList($dataDir);
-ProcessFiles($outDir, 'heavy_v', @files);
-ProcessFiles($outDir, 'heavy_d', @files);
-ProcessFiles($outDir, 'heavy_j', @files);
-ProcessFiles($outDir, 'heavy_c', @files);
+ProcessFiles($outDir, 'heavy_v', '',        @files);
+ProcessFiles($outDir, 'heavy_d', '',        @files);
+ProcessFiles($outDir, 'heavy_j', '',        @files);
+ProcessFiles($outDir, 'heavy_c', 'CH1',     @files);
+ProcessFiles($outDir, 'heavy_c', 'CH2',     @files);
+ProcessFiles($outDir, 'heavy_c', 'CH3',     @files);
+ProcessFiles($outDir, 'heavy_c', 'CH3-CHS', @files);
+ProcessFiles($outDir, 'heavy_c', 'CH4-CHS', @files);
+ProcessFiles($outDir, 'heavy_c', 'CHS',     @files);
 
-ProcessFiles($outDir, 'light_v', @files);
-ProcessFiles($outDir, 'light_j', @files);
-ProcessFiles($outDir, 'light_c', @files);
+ProcessFiles($outDir, 'light_v', '',        @files);
+ProcessFiles($outDir, 'light_j', '',        @files);
+ProcessFiles($outDir, 'light_c', '',        @files);
 
 sub ProcessFiles
 {
-    my ($outDir, $type, @files) = @_;
-    my $outFilename = "${outDir}/${type}.dat";
+    my ($outDir, $type, $domain, @files) = @_;
+    my $outFilename;
+    if($domain eq '')
+    {
+        $outFilename = "${outDir}/${type}.dat";
+    }
+    else
+    {
+        $outFilename = "${outDir}/${domain}.dat";
+    }
+    
     if(open(my $outFp, '>', $outFilename))
     {
         foreach my $file (@files)
         {
             if($file =~ /$type/)
             {
-                ProcessAFile($outFp, $file)
+                ProcessAFile($outFp, $file, $domain)
             }
         }
         close $outFp;
@@ -110,7 +124,7 @@ sub ProcessFiles
 
 sub ProcessAFile
 {
-    my($outFp, $file) = @_;
+    my($outFp, $file, $domain) = @_;
     if(open(my $inFp, '<', $file))
     {
         my($id, $info, $sequence);
@@ -118,7 +132,7 @@ sub ProcessAFile
         {
             ($id, $info, $sequence) = fasta::ReadFasta($inFp);
             last if ($id eq '');
-            PrintTranslations($outFp, $info, $sequence);
+            PrintTranslations($outFp, $info, $sequence, $domain);
         }
               
         close $inFp;
@@ -131,20 +145,24 @@ sub ProcessAFile
 
 sub PrintTranslations
 {
-    my($outFp, $info, $sequence) = @_;
+    my($outFp, $info, $sequence, $domain) = @_;
 
 
     for(my $frame=0; $frame < 3; $frame++)
     {
         my $aaSeq = Translate($sequence, $frame);
 
-        my $numStops = () = $aaSeq =~ /\*/g;
-        if($numStops < 2)
+        if((length($aaSeq) > 50) ||
+           ($domain eq 'CHS'))
         {
-            my $header = CreateHeader($info, $frame);
-            if($header ne '')
+            my $numStops = () = $aaSeq =~ /\*/g;
+            if($numStops < 2)
             {
-                print $outFp "$header\n$aaSeq\n";
+                my $header = CreateHeader($info, $frame, $domain);
+                if($header ne '')
+                {
+                    print $outFp "$header\n$aaSeq\n";
+                }
             }
         }
     }
@@ -152,17 +170,24 @@ sub PrintTranslations
 
 sub CreateHeader
 {
-    my($info, $frame) = @_;
+    my($info, $frame, $domain) = @_;
 
-    my @fields = split(/\|/, $info);
-    my $species = $fields[2];
-    $species =~ s/\_.*//;  # Remove strain
-    my $gene    = $fields[1];
-    my $domain  = $fields[4];
-    my $header  = '';
-    if(($domain =~ /^CH/) || ($domain =~ /^[VCJ]-/))
+    my @fields      = split(/\|/, $info);
+    my $species     = $fields[2];
+    $species        =~ s/\_.*//;  # Remove strain
+    my $gene        = $fields[1];
+    my $thisDomain  = $fields[4];
+    my $header      = '';
+    if($domain ne '')
     {
-        $header = ">${domain}_${gene}_F${frame}_$species";
+        if($thisDomain eq $domain)
+        {
+            $header = ">${thisDomain}_${gene}_F${frame}_$species";
+        }
+    }
+    elsif(($thisDomain =~ /^CH/) || ($thisDomain =~ /^[VCJ]-/))
+    {
+        $header = ">${thisDomain}_${gene}_F${frame}_$species";
     }
     return($header);
 }
