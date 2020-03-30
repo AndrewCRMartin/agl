@@ -147,13 +147,13 @@ sub PrintTranslations
 {
     my($outFp, $info, $sequence, $domain) = @_;
 
-
     for(my $frame=0; $frame < 3; $frame++)
     {
         my $aaSeq = Translate($sequence, $frame);
 
         if((length($aaSeq) > 50) ||
-           ($domain eq 'CHS'))
+           ($domain eq 'CHS')    ||
+           ($info =~ /J-REGION/))
         {
             my $numStops = () = $aaSeq =~ /\*/g;
             if($numStops < 2)

@@ -16,6 +16,7 @@
 #define THRESHOLD_LC      0.5
 #define THRESHOLD_HV      0.5
 #define THRESHOLD_HC      0.5
+#define THRESHOLD_HJ      0.5
 
 #define CHAINTYPE(x) (                            \
    (x)==CHAINTYPE_LIGHT ? "Light" :               \
@@ -74,12 +75,14 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
 {
    char lvMatch[MAXBUFF+1],
         hvMatch[MAXBUFF+1],
+        hjMatch[MAXBUFF+1],
         lcMatch[MAXBUFF+1],
         CH1Match[MAXBUFF+1],
         CH2Match[MAXBUFF+1],
         CH3CHSMatch[MAXBUFF+1];
    REAL lvScore     = -1.0,
         hvScore     = -1.0,
+        hjScore     = -1.0,
         lcScore     = -1.0,
         CH1Score    = -1.0,
         CH2Score    = -1.0,
@@ -115,18 +118,18 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
 
       if(lvScore > THRESHOLD_LV)
       {
-         fprintf(out, "VL : %f : %s\n", lvScore, lvMatch);
+         fprintf(out, "VL  : %f : %s\n", lvScore, lvMatch);
       }
 
       if(lcScore > THRESHOLD_LC)
       {
-         fprintf(out, "CL : %f : %s\n", lcScore, lcMatch);
+         fprintf(out, "CL  : %f : %s\n", lcScore, lcMatch);
       }
       
       break;
    case CHAINTYPE_HEAVY:
       if(hvScore < 0.0)
-         hvScore = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
+         hvScore  = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
 
       if(CH1Score < 0.0)
          CH1Score = ScanAgainstDB("CH1", seq, verbose, CH1Match);
@@ -136,7 +139,15 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
       
       if(hvScore > THRESHOLD_HV)
       {
-         fprintf(out, "V : %f : %s\n", hvScore, hvMatch);
+         fprintf(out, "VH  : %f : %s\n", hvScore, hvMatch);
+         hjScore = ScanAgainstDB("heavy_j", seq, verbose, hjMatch);
+/*         if(hjScore > THRESHOLD_HJ)
+ */
+         {
+            fprintf(out, "JH  : %f : %s\n", hjScore, hjMatch);
+         }
+         
+
       }
 
       if(CH1Score > THRESHOLD_HC)
