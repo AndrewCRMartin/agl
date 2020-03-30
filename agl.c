@@ -73,30 +73,35 @@ int main(int argc, char **argv)
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
 {
    char lvMatch[MAXBUFF+1],
-       hvMatch[MAXBUFF+1],
-       lcMatch[MAXBUFF+1],
-      hcMatch[MAXBUFF+1];
-   REAL lvScore = -1.0,
-      hvScore = -1.0,
-      lcScore = -1.0,
-      hcScore = -1.0;
+        hvMatch[MAXBUFF+1],
+        lcMatch[MAXBUFF+1],
+        CH1Match[MAXBUFF+1],
+        CH2Match[MAXBUFF+1],
+        CH3CHSMatch[MAXBUFF+1];
+   REAL lvScore     = -1.0,
+        hvScore     = -1.0,
+        lcScore     = -1.0,
+        CH1Score    = -1.0,
+        CH2Score    = -1.0,
+        CH3CHSScore = -1.0;
 
    /* Find out what the chain type is if it isn't specified             */
    if(chainType == CHAINTYPE_UNKNOWN)
    {
-      lvScore = ScanAgainstDB("light_v", seq, verbose, lvMatch);
-      hvScore = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
-      lcScore = ScanAgainstDB("light_c", seq, verbose, lcMatch);
-      hcScore = ScanAgainstDB("heavy_c", seq, verbose, hcMatch);
+      lvScore  = ScanAgainstDB("light_v", seq, verbose, lvMatch);
+      hvScore  = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
+      lcScore  = ScanAgainstDB("light_c", seq, verbose, lcMatch);
+      CH1Score = ScanAgainstDB("CH1",     seq, verbose, CH1Match);
 
-      if((lvScore > hvScore) || (lcScore > hcScore))
+      if((lvScore > hvScore) || (lcScore > CH1Score))
       {
          chainType = CHAINTYPE_LIGHT;
       }
-      else if((hvScore > lvScore) || (hcScore > lcScore))
+      else if((hvScore > lvScore) || (CH1Score > lcScore))
       {
          chainType = CHAINTYPE_HEAVY;
       }
+      
       fprintf(out, "Chain type: %s\n", CHAINTYPE(chainType));
    }
 
@@ -110,28 +115,41 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
 
       if(lvScore > THRESHOLD_LV)
       {
-         fprintf(out, "V : %f : %s\n", lvScore, lvMatch);
+         fprintf(out, "VL : %f : %s\n", lvScore, lvMatch);
       }
+
       if(lcScore > THRESHOLD_LC)
       {
-         fprintf(out, "C : %f : %s\n", lcScore, lcMatch);
+         fprintf(out, "CL : %f : %s\n", lcScore, lcMatch);
       }
       
       break;
    case CHAINTYPE_HEAVY:
       if(hvScore < 0.0)
          hvScore = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
-      if(hcScore < 0.0)
-         hcScore = ScanAgainstDB("heavy_c", seq, verbose, hcMatch);
 
+      if(CH1Score < 0.0)
+         CH1Score = ScanAgainstDB("CH1", seq, verbose, CH1Match);
+
+      CH2Score    = ScanAgainstDB("CH2",     seq, verbose, CH2Match);
+      CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, CH3CHSMatch);
+      
       if(hvScore > THRESHOLD_HV)
       {
          fprintf(out, "V : %f : %s\n", hvScore, hvMatch);
       }
 
-      if(hcScore > THRESHOLD_HC)
+      if(CH1Score > THRESHOLD_HC)
       {
-         fprintf(out, "C : %f : %s\n", hcScore, hcMatch);
+         fprintf(out, "CH1 : %f : %s\n", CH1Score, CH1Match);
+      }
+      if(CH2Score > THRESHOLD_HC)
+      {
+         fprintf(out, "CH2 : %f : %s\n", CH2Score, CH2Match);
+      }
+      if(CH3CHSScore > THRESHOLD_HC)
+      {
+         fprintf(out, "CH3-CHS : %f : %s\n", CH3CHSScore, CH3CHSMatch);
       }
       
       break;
