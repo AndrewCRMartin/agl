@@ -5,7 +5,9 @@
 #include "bioplib/sequtil.h"
 #include "bioplib/general.h"
 #include "bioplib/macros.h"
+#include "findfields.h"
 
+#define SMALLBUFF         80
 #define MAXBUFF           256
 #define HUGEBUFF          1024
 #define CHAINTYPE_UNKNOWN 0
@@ -29,6 +31,9 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verb
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *match);
 REAL CompareSeqs(char *theSeq, char *seq);
+BOOL PreferHeader(char *newHeader, char *oldHeader);
+void GetDomainID(char *header, char *id, int maxbuff);
+
 
 int main(int argc, char **argv)
 {
@@ -198,6 +203,17 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *match)
             maxScore = score;
             strncpy(bestMatch, header, MAXBUFF);
          }
+         else if(score == maxScore)
+         {
+            /* If the scores are the same, choose the one with the better 
+               gene name
+            */
+            if(PreferHeader(header, bestMatch))
+            {
+               maxScore = score;
+               strncpy(bestMatch, header, MAXBUFF);
+            }
+         }
          
          free(seq);
       }
@@ -208,7 +224,63 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *match)
    return(maxScore);
 }
 
+
 /************************************************************************/
+BOOL PreferHeader(char *newHeader, char *oldHeader)
+{
+   char newID[SMALLBUFF+1],
+        oldID[SMALLBUFF+1];
+   char newClass[SMALLBUFF],
+      newDistal[SMALLBUFF],
+      newFamily[SMALLBUFF],
+      newSubclass[SMALLBUFF];
+   int newAllele;
+   char oldClass[SMALLBUFF],
+      oldDistal[SMALLBUFF],
+      oldFamily[SMALLBUFF],
+      oldSubclass[SMALLBUFF];
+   int oldAllele;
+   
+   GetDomainID(newHeader, newID, SMALLBUFF);
+   GetDomainID(oldHeader, oldID, SMALLBUFF);
+
+   FindFields(newID, newClass, newSubclass, newFamily, &newAllele, newDistal);
+   FindFields(oldID, oldClass, oldSubclass, oldFamily, &oldAllele, oldDistal);
+   
+   
+}
+
+/************************************************************************/
+void GetDomainID(char *header, char *id, int maxbuff)
+{
+   int start, i,
+      headerLen;
+   headerLen = strlen(header);
+   
+   for(start=0; start<headerLen; start++)
+   {
+      if(header[start] == '_')
+      {
+         start++;
+         break;
+      }
+   }
+   for(i=0; i<headerLen-start && i<maxbuff; i++)
+   {
+      id[i] = header[start+i];
+      if(id[i] == '_')
+      {
+         break;
+      }
+   }
+   id[i] = '\0';
+}
+
+
+/************************************************************************/
+/* theSeq is the sequence of interest
+   seq is the database sequence
+*/
 REAL CompareSeqs(char *theSeq, char *seq)
 {
    int score;
