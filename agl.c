@@ -30,10 +30,6 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *match);
 REAL CompareSeqs(char *theSeq, char *seq);
 
-
-
-
-
 int main(int argc, char **argv)
 {
    char infile[MAXBUFF+1],
@@ -61,14 +57,10 @@ int main(int argc, char **argv)
    else
    {
       Usage();
-
    }
    
-   
    return(0);
-   
 }
-
 
     
 /************************************************************************/
