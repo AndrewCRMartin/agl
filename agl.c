@@ -62,6 +62,13 @@ int main(int argc, char **argv)
             ProcessSeq(out, seq, verbose, chainType, species);
             free(seq);
          }
+         if(in  != stdin)  fclose(in);
+         if(out != stdout) fclose(out);
+      }
+      else
+      {
+         fprintf(stderr,"Unable to open input or output file\n");
+         return(1);
       }
    }
    else
@@ -532,10 +539,11 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
       }
    }
    buffer[j] = '\0';
-   
    /* Copy this back into seq */
-   strncpy(seq, buffer, MAXBUFF);
-
+   i=strlen(seq);
+   strncpy(seq, buffer, i);
+   seq[i] = '\0';
+   
    if(verbose)
    {
       fprintf(stderr, "Output seq:       %s\n", seq);

@@ -11,3 +11,9 @@ $(EXE) : $(OFILES)
 
 .c.o :
 	$(CC) -c -o $@ $<
+
+clean :
+	\rm -f $(OFILES)
+
+distclean : clean
+	\rm -f $(EXE)
