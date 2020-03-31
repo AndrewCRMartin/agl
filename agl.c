@@ -240,14 +240,47 @@ BOOL PreferHeader(char *newHeader, char *oldHeader)
       oldFamily[SMALLBUFF],
       oldSubclass[SMALLBUFF];
    int oldAllele;
+   int oldNum, newNum;
    
    GetDomainID(newHeader, newID, SMALLBUFF);
    GetDomainID(oldHeader, oldID, SMALLBUFF);
 
    FindFields(newID, newClass, newSubclass, newFamily, &newAllele, newDistal);
    FindFields(oldID, oldClass, oldSubclass, oldFamily, &oldAllele, oldDistal);
+
+   /* if it's non-distal and the current best is distal, keep the new one */
+   if((newDistal[0] == '\0') && (oldDistal[0] != '\0'))
+      return(TRUE);
    
+   /* If the sub-class is numeric and the old one isn't, keep the new one */
+   oldNum = atoi(oldSubclass);
+   newNum = atoi(newSubclass);
    
+   if((newNum > 0) && (oldNum == 0))
+      return(TRUE);
+
+   /* If both are numeric and the new one is lower, keep the new one  */
+   if((newNum && oldNum) &&
+      (newNum < oldNum))
+      return(TRUE);
+
+   /* If the family is numeric and the old one isn't, keep the new one */
+   oldNum = atoi(oldFamily);
+   newNum = atoi(newFamily);
+   
+   if((newNum > 0) && (oldNum == 0))
+      return(TRUE);
+
+   /* If both are numeric and the new one is lower, keep the new one   */
+   if((newNum && oldNum) &&
+      (newNum < oldNum))
+      return(TRUE);
+
+   /* Keep the lowest allele */
+   if(newAllele < oldAllele)
+      return(TRUE);
+
+   return(FALSE);
 }
 
 /************************************************************************/
