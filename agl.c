@@ -27,9 +27,9 @@
 
 int main(int argc, char **argv);
 void Usage(void);
-BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verbose, int *chainType);
-void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType);
-REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *match);
+BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verbose, int *chainType, char *species);
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species);
+REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species, char *match);
 REAL CompareSeqs(char *theSeq, char *seq);
 BOOL PreferHeader(char *newHeader, char *oldHeader);
 void GetDomainID(char *header, char *id, int maxbuff);
@@ -38,15 +38,16 @@ void GetDomainID(char *header, char *id, int maxbuff);
 int main(int argc, char **argv)
 {
    char infile[MAXBUFF+1],
-      outfile[MAXBUFF+1];
+      outfile[MAXBUFF+1],
+      species[MAXBUFF+1];
    BOOL verbose = FALSE;
    int chainType = CHAINTYPE_UNKNOWN;
    
-   if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType))
+   if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType, species))
    {
       FILE *in  = stdin,
            *out = stdout;
-   
+
       if(blOpenStdFiles(infile, outfile, &in, &out))
       {
          char header[MAXBUFF+1];
@@ -54,7 +55,7 @@ int main(int argc, char **argv)
 
          if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
-            ProcessSeq(out, seq, verbose, chainType);
+            ProcessSeq(out, seq, verbose, chainType, species);
             free(seq);
          }
       }
@@ -69,7 +70,7 @@ int main(int argc, char **argv)
 
     
 /************************************************************************/
-void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species)
 {
    char lvMatch[MAXBUFF+1],
         hvMatch[MAXBUFF+1],
@@ -91,10 +92,10 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
    /* Find out what the chain type is if it isn't specified             */
    if(chainType == CHAINTYPE_UNKNOWN)
    {
-      lvScore  = ScanAgainstDB("light_v", seq, verbose, lvMatch);
-      hvScore  = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
-      lcScore  = ScanAgainstDB("light_c", seq, verbose, lcMatch);
-      CH1Score = ScanAgainstDB("CH1",     seq, verbose, CH1Match);
+      lvScore  = ScanAgainstDB("light_v", seq, verbose, species, lvMatch);
+      hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species, hvMatch);
+      lcScore  = ScanAgainstDB("light_c", seq, verbose, species, lcMatch);
+      CH1Score = ScanAgainstDB("CH1",     seq, verbose, species, CH1Match);
 
       if((lvScore > hvScore) || (lcScore > CH1Score))
       {
@@ -112,14 +113,14 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
    {
    case CHAINTYPE_LIGHT:
       if(lvScore < 0.0)
-         lvScore = ScanAgainstDB("light_v", seq, verbose, lvMatch);
+         lvScore = ScanAgainstDB("light_v", seq, verbose, species, lvMatch);
       if(lcScore < 0.0)
-         lcScore = ScanAgainstDB("light_c", seq, verbose, lcMatch);
+         lcScore = ScanAgainstDB("light_c", seq, verbose, species, lcMatch);
 
       if(lvScore > THRESHOLD_LV)
       {
          fprintf(out, "VL  : %f : %s\n", lvScore, lvMatch);
-         ljScore = ScanAgainstDB("light_j", seq, verbose, ljMatch);
+         ljScore = ScanAgainstDB("light_j", seq, verbose, species, ljMatch);
          if(ljScore > THRESHOLD_LJ)
          {
             fprintf(out, "JL  : %f : %s\n", ljScore, ljMatch);
@@ -134,31 +135,31 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
       break;
    case CHAINTYPE_HEAVY:
       if(hvScore < 0.0)
-         hvScore  = ScanAgainstDB("heavy_v", seq, verbose, hvMatch);
+         hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species, hvMatch);
 
       if(CH1Score < 0.0)
-         CH1Score = ScanAgainstDB("CH1", seq, verbose, CH1Match);
+         CH1Score = ScanAgainstDB("CH1", seq, verbose, species, CH1Match);
 
-      CH2Score    = ScanAgainstDB("CH2",     seq, verbose, CH2Match);
-      CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, CH3CHSMatch);
+      CH2Score    = ScanAgainstDB("CH2",     seq, verbose, species, CH2Match);
+      CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species, CH3CHSMatch);
       
       if(hvScore > THRESHOLD_HV)
       {
-         fprintf(out, "VH  : %f : %s\n", hvScore, hvMatch);
-         hjScore = ScanAgainstDB("heavy_j", seq, verbose, hjMatch);
+         fprintf(out, "VH      : %f : %s\n", hvScore, hvMatch);
+         hjScore = ScanAgainstDB("heavy_j", seq, verbose, species, hjMatch);
          if(hjScore > THRESHOLD_HJ)
          {
-            fprintf(out, "JH  : %f : %s\n", hjScore, hjMatch);
+            fprintf(out, "JH      : %f : %s\n", hjScore, hjMatch);
          }
       }
 
       if(CH1Score > THRESHOLD_HC)
       {
-         fprintf(out, "CH1 : %f : %s\n", CH1Score, CH1Match);
+         fprintf(out, "CH1     : %f : %s\n", CH1Score, CH1Match);
       }
       if(CH2Score > THRESHOLD_HC)
       {
-         fprintf(out, "CH2 : %f : %s\n", CH2Score, CH2Match);
+         fprintf(out, "CH2     : %f : %s\n", CH2Score, CH2Match);
       }
       if(CH3CHSScore > THRESHOLD_HC)
       {
@@ -173,7 +174,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType)
 }
 
 /************************************************************************/
-REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *match)
+REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species, char *match)
 {
    char filename[MAXBUFF+1];
    BOOL noEnv;
@@ -190,28 +191,44 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *match)
 
       while((seq = blReadFASTA(dbFp, header, MAXBUFF))!=NULL)
       {
-         REAL score;
-
-         if(verbose)
+         if((species[0] == '\0') ||
+            (strstr(header, species) != NULL))
          {
-            fprintf(stderr, "Comparing with %s\n", header);
-         }
+            REAL score;
          
-         score = CompareSeqs(theSeq, seq);
-         if(score > maxScore)
-         {
-            maxScore = score;
-            strncpy(bestMatch, header, MAXBUFF);
-         }
-         else if(score == maxScore)
-         {
-            /* If the scores are the same, choose the one with the better 
-               gene name
-            */
-            if(PreferHeader(header, bestMatch))
+            if(verbose)
+               fprintf(stderr, "Comparing with %s\n", header);
+            
+            score = CompareSeqs(theSeq, seq);
+            if(score > maxScore)
             {
+               if(verbose)
+                  fprintf(stderr, "Comparing with %s *** %.4f\n", header, score);
+            
                maxScore = score;
                strncpy(bestMatch, header, MAXBUFF);
+            }
+            else if(score == maxScore)
+            {
+               /* If the scores are the same, choose the one with the better 
+                  gene name
+               */
+               if(PreferHeader(header, bestMatch))
+               {
+                  if(verbose)
+                     fprintf(stderr, "Comparing with %s *** %.4f\n", header, score);
+            
+                  maxScore = score;
+                  strncpy(bestMatch, header, MAXBUFF);
+               }
+               else if(verbose)
+               {
+                  fprintf(stderr, "Comparing with %s (rejected %.4f)\n", header, score);
+               }
+            }
+            else if(verbose)
+            {
+               fprintf(stderr, "Comparing with %s\n", header);
             }
          }
          
@@ -316,20 +333,25 @@ void GetDomainID(char *header, char *id, int maxbuff)
 */
 REAL CompareSeqs(char *theSeq, char *seq)
 {
-   int score;
+   int  score;
    char align1[HUGEBUFF+1],
-      align2[HUGEBUFF+1];
-   int alignLen;
-   int shortSeqLen = MIN(strlen(theSeq), strlen(seq));
+        align2[HUGEBUFF+1];
+   int  alignLen;
+   int  shortSeqLen = MIN(strlen(theSeq), strlen(seq));
    
    score = blAlign(theSeq, strlen(theSeq),
                    seq, strlen(seq),
                    FALSE, /* verbose */
                    TRUE,  /* identity */
-                   1,     /* penalty */
+                   5,     /* penalty */
                    align1,
                    align2,
                    &alignLen);
+#ifdef DEBUG
+   printf("%s\n%s\n", align1, align2);
+#endif
+   
+   
    return ((REAL)score / (REAL)shortSeqLen);
 }
 
@@ -350,7 +372,7 @@ void Usage(void)
 
 /************************************************************************/
 /*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                     BOOL *verbose, int *chainType)
+                     BOOL *verbose, int *chainType, char *species)
    ---------------------------------------------------------------------
    Input:   int      argc        Argument count
             char     **argv      Argument array
@@ -358,6 +380,7 @@ void Usage(void)
             char     *outfile    Output filename (or blank string)
             BOOL     *verbose    Verbose
             int      *chainType  Chain type
+            char     *species    Species or blank string
    Returns: BOOL                 Success
 
    Parse the command line
@@ -365,12 +388,14 @@ void Usage(void)
    26.03.20 Original    By: ACRM
 */
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                  BOOL *verbose, int *chainType)
+                  BOOL *verbose, int *chainType, char *species)
 {
    argc--;
    argv++;
    
    infile[0]   = outfile[0] = '\0';
+   species[0] = '\0';
+   
    
    while(argc)
    {
@@ -391,12 +416,17 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                return(FALSE);
             *chainType = CHAINTYPE_HEAVY;
             break;
+         case 's':
+            argc--; argv++;
+            if(!argc)
+               return(FALSE);
+            strncpy(species, argv[0], MAXBUFF);
+            break;
          default:
             return(FALSE);
             break;
          }
-         argc--;
-         argv++;
+         argc--; argv++;
       }
       else
       {

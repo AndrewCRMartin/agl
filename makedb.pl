@@ -151,7 +151,7 @@ sub PrintTranslations
     {
         my $aaSeq = Translate($sequence, $frame);
 
-        if((length($aaSeq) > 50) ||
+        if((length($aaSeq) > 90) ||
            ($domain eq 'CHS')    ||
            ($info =~ /J-REGION/))
         {
