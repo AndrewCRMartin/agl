@@ -1,3 +1,56 @@
+/************************************************************************/
+/**
+
+   Program:    agl (Assign Germ Line)
+   \file       agl.c
+   
+   \version    V1.0    
+   \date       31.03.20   
+   \brief      Assigns IMGT germline
+   
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020
+   \author     Prof. Andrew C. R. Martin
+   \par
+               Institute of Structural & Molecular Biology,
+               University College,
+               Gower Street,
+               London.
+               WC1E 6BT.
+   \par
+               andrew@bioinf.org.uk
+               andrew.martin@ucl.ac.uk
+               
+**************************************************************************
+
+   This program is not in the public domain, but it may be copied
+   according to the conditions laid out in the accompanying file
+   COPYING.DOC
+
+   The code may be modified as required, but any modifications must be
+   documented so that the person responsible can be identified.
+
+   The code may not be sold commercially or included as part of a 
+   commercial product except as described in the file COPYING.DOC.
+
+**************************************************************************
+
+   Description:
+   ============
+
+**************************************************************************
+
+   Usage:
+   ======
+
+**************************************************************************
+
+   Revision History:
+   =================
+   V1.0   31.03.20  Original
+
+*************************************************************************/
+/* Includes
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,48 +59,59 @@
 #include "bioplib/general.h"
 #include "bioplib/macros.h"
 #include "findfields.h"
+#include "agl.h"
 
-#define SMALLBUFF         80
-#define MAXBUFF           256
-#define HUGEBUFF          1024
-#define CHAINTYPE_UNKNOWN 0
-#define CHAINTYPE_LIGHT   1
-#define CHAINTYPE_HEAVY   2
-#define AGLDATADIR        "mydata"
-#define THRESHOLD_LV      0.5
-#define THRESHOLD_LJ      0.5
-#define THRESHOLD_LC      0.5
-#define THRESHOLD_HV      0.5
-#define THRESHOLD_HJ      0.5
-#define THRESHOLD_HC      0.5
-
+/************************************************************************/
+/* Defines and macros
+*/
 #define CHAINTYPE(x) (                            \
    (x)==CHAINTYPE_LIGHT ? "Light" :               \
     ((x)==CHAINTYPE_HEAVY ? "Heavy" : "Unknown"))
 
+/************************************************************************/
+/* Globals
+*/
+
+/************************************************************************/
+/* Prototypes
+*/
 int main(int argc, char **argv);
 void Usage(void);
-BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile, BOOL *verbose, int *chainType, char *species);
-void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species);
-REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species, char *match, char *bestAlign1, char *bestAlign2);
+BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
+                  BOOL *verbose, int *chainType, char *species);
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
+                char *species);
+REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species,
+                   char *match, char *bestAlign1, char *bestAlign2);
 REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2);
 BOOL PreferHeader(char *newHeader, char *oldHeader);
 void GetDomainID(char *header, char *id, int maxbuff);
 void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose);
 void PrintResult(FILE *out, char *domain, REAL score, char *match);
 
+/************************************************************************/
 
 
 
+
+/************************************************************************/
+/*>int main(int argc, char **argv)
+   -------------------------------
+*//**
+   Main program
+
+   - 31.03.20 Original   By: ACRM
+*/
 int main(int argc, char **argv)
 {
    char infile[MAXBUFF+1],
-      outfile[MAXBUFF+1],
-      species[MAXBUFF+1];
-   BOOL verbose = FALSE;
-   int chainType = CHAINTYPE_UNKNOWN;
+        outfile[MAXBUFF+1],
+        species[MAXBUFF+1];
+   BOOL verbose   = FALSE;
+   int  chainType = CHAINTYPE_UNKNOWN;
    
-   if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType, species))
+   if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType,
+                   species))
    {
       FILE *in  = stdin,
            *out = stdout;
@@ -79,42 +143,82 @@ int main(int argc, char **argv)
    return(0);
 }
 
-    
+
 /************************************************************************/
-void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species)
+/*>void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
+                char *species)
+   ------------------------------------------------------------------
+*//**
+   \param[in]   out        Output file pointer
+   \param[in]   seq        Sequence to analyze
+   \param[in]   verbose    Verbose output
+   \param[in]   chainType  Type of chain (or unknown)
+   \param[in]   species    "Homo", "Mus" or blank
+
+   Processes a sequence sending output to the specified file
+
+   - 31.03.20 Original   By: ACRM
+*/
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
+                char *species)
 {
-   char lvMatch[MAXBUFF+1],
-        hvMatch[MAXBUFF+1],
-        ljMatch[MAXBUFF+1],
-        hjMatch[MAXBUFF+1],
-        lcMatch[MAXBUFF+1],
-        CH1Match[MAXBUFF+1],
-        CH2Match[MAXBUFF+1],
-        CH3CHSMatch[MAXBUFF+1],
-        bestAlign1[HUGEBUFF+1],
-        bestAlign2[HUGEBUFF+1];
-   REAL lvScore     = -1.0,
-        hvScore     = -1.0,
-        ljScore     = -1.0,
-        hjScore     = -1.0,
-        lcScore     = -1.0,
-        CH1Score    = -1.0,
-        CH2Score    = -1.0,
-        CH3CHSScore = -1.0;
+   char        lvMatch[MAXBUFF+1],
+               hvMatch[MAXBUFF+1],
+               ljMatch[MAXBUFF+1],
+               hjMatch[MAXBUFF+1],
+               lcMatch[MAXBUFF+1],
+               CH1Match[MAXBUFF+1],
+               CH2Match[MAXBUFF+1],
+               CH3CHSMatch[MAXBUFF+1];
+   static char lvBestAlign1[HUGEBUFF+1],
+               lvBestAlign2[HUGEBUFF+1],
+               hvBestAlign1[HUGEBUFF+1],
+               hvBestAlign2[HUGEBUFF+1],
+               lcBestAlign1[HUGEBUFF+1],
+               lcBestAlign2[HUGEBUFF+1],
+               CH1BestAlign1[HUGEBUFF+1],
+               CH1BestAlign2[HUGEBUFF+1],
+               bestAlign1[HUGEBUFF+1],
+               bestAlign2[HUGEBUFF+1];
+   REAL        lvScore     = -1.0,
+               hvScore     = -1.0,
+               ljScore     = -1.0,
+               hjScore     = -1.0,
+               lcScore     = -1.0,
+               CH1Score    = -1.0,
+               CH2Score    = -1.0,
+               CH3CHSScore = -1.0;
 
    /* Find out what the chain type is if it isn't specified             */
    if(chainType == CHAINTYPE_UNKNOWN)
    {
-      lvScore  = ScanAgainstDB("light_v", seq, verbose, species, lvMatch,  bestAlign1, bestAlign2);
-      hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species, hvMatch,  bestAlign1, bestAlign2);
-      lcScore  = ScanAgainstDB("light_c", seq, verbose, species, lcMatch,  bestAlign1, bestAlign2);
-      CH1Score = ScanAgainstDB("CH1",     seq, verbose, species, CH1Match, bestAlign1, bestAlign2);
+      lvScore = ScanAgainstDB("light_v", seq, verbose, species,
+                              lvMatch,  lvBestAlign1, lvBestAlign2);
+      hvScore = ScanAgainstDB("heavy_v", seq, verbose, species,
+                              hvMatch,  hvBestAlign1, hvBestAlign2);
 
-      if((lvScore > hvScore) || (lcScore > CH1Score))
+      if((lvScore > hvScore) && (lvScore > THRESHOLD_LV))
       {
          chainType = CHAINTYPE_LIGHT;
       }
-      else if((hvScore > lvScore) || (CH1Score > lcScore))
+      else if((hvScore > lvScore) && (hvScore > THRESHOLD_HV))
+      {
+         chainType = CHAINTYPE_HEAVY;
+      }
+      
+      if(chainType == CHAINTYPE_UNKNOWN)
+      {
+         lcScore  = ScanAgainstDB("light_c", seq, verbose, species,
+                                  lcMatch,  lcBestAlign1,  lcBestAlign2);
+         CH1Score = ScanAgainstDB("CH1",     seq, verbose, species,
+                                  CH1Match, CH1BestAlign1, CH1BestAlign2);
+      }
+
+      if((lcScore > CH1Score) && (lcScore > THRESHOLD_LC))
+      {
+         chainType = CHAINTYPE_LIGHT;
+      }
+      else if((CH1Score > lcScore) && (CH1Score > THRESHOLD_HC))
       {
          chainType = CHAINTYPE_HEAVY;
       }
@@ -126,13 +230,15 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species
    {
    case CHAINTYPE_LIGHT:
       if(lvScore < 0.0)
-         lvScore = ScanAgainstDB("light_v", seq, verbose, species, lvMatch, bestAlign1, bestAlign2);
-
+         lvScore = ScanAgainstDB("light_v", seq, verbose, species,
+                                 lvMatch, lvBestAlign1, lvBestAlign2);
       if(lvScore > THRESHOLD_LV)
       {
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+         RemoveSequence(seq, lvBestAlign1, lvBestAlign2, verbose);
          fprintf(out, "VL  : %f : %s\n", lvScore, lvMatch);
-         ljScore = ScanAgainstDB("light_j", seq, verbose, species, ljMatch, bestAlign1, bestAlign2);
+
+         ljScore = ScanAgainstDB("light_j", seq, verbose, species,
+                                 ljMatch, bestAlign1, bestAlign2);
          if(ljScore > THRESHOLD_LJ)
          {
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
@@ -141,24 +247,27 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species
       }
 
       if(lcScore < 0.0)
-         lcScore = ScanAgainstDB("light_c", seq, verbose, species, lcMatch, bestAlign1, bestAlign2);
+         lcScore = ScanAgainstDB("light_c", seq, verbose, species,
+                                 lcMatch, lcBestAlign1, lcBestAlign2);
       if(lcScore > THRESHOLD_LC)
       {
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+         RemoveSequence(seq, lcBestAlign1, lcBestAlign2, verbose);
          fprintf(out, "CL  : %f : %s\n", lcScore, lcMatch);
       }
       
       break;
+
    case CHAINTYPE_HEAVY:
       if(hvScore < 0.0)
-         hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species, hvMatch, bestAlign1, bestAlign2);
-
+         hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species,
+                                  hvMatch, hvBestAlign1, hvBestAlign2);
       if(hvScore > THRESHOLD_HV)
       {
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+         RemoveSequence(seq, hvBestAlign1, hvBestAlign2, verbose);
          PrintResult(out, "VH", hvScore, hvMatch);
          
-         hjScore = ScanAgainstDB("heavy_j", seq, verbose, species, hjMatch, bestAlign1, bestAlign2);
+         hjScore = ScanAgainstDB("heavy_j", seq, verbose, species,
+                                 hjMatch, bestAlign1, bestAlign2);
          if(hjScore > THRESHOLD_HJ)
          {
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
@@ -167,22 +276,24 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species
       }
 
       if(CH1Score < 0.0)
-         CH1Score = ScanAgainstDB("CH1", seq, verbose, species, CH1Match, bestAlign1, bestAlign2);
+         CH1Score = ScanAgainstDB("CH1", seq, verbose, species,
+                                  CH1Match, CH1BestAlign1, CH1BestAlign2);
       if(CH1Score > THRESHOLD_HC)
       {
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+         RemoveSequence(seq, CH1BestAlign1, CH1BestAlign2, verbose);
          PrintResult(out, "CH1", CH1Score, CH1Match);
       }
-
       
-      CH2Score    = ScanAgainstDB("CH2",     seq, verbose, species, CH2Match, bestAlign1, bestAlign2);
+      CH2Score = ScanAgainstDB("CH2", seq, verbose, species,
+                               CH2Match, bestAlign1, bestAlign2);
       if(CH2Score > THRESHOLD_HC)
       {
          RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
          PrintResult(out, "CH2", CH2Score, CH2Match);
       }
 
-      CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species, CH3CHSMatch, bestAlign1, bestAlign2);
+      CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species,
+                                  CH3CHSMatch, bestAlign1, bestAlign2);
       if(CH3CHSScore > THRESHOLD_HC)
       {
          RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
@@ -190,29 +301,48 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType, char *species
       }
       
       break;
+      
    default:
       fprintf(stderr, "Can't identify chain type!\n");
       exit (1);
    }
 }
 
+
 /************************************************************************/
-REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species, char *match, char *bestAlign1, char *bestAlign2)
+/*>REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, 
+                      char *species, char *match, char *bestAlign1, 
+                      char *bestAlign2)
+   -------------------------------------------------------------------------
+*//**
+   \param[in]  type       The database type against which we scan
+   \param[in]  theSeq     The sequences to test
+   \param[in]  verbose    Verbose output
+   \param[in]  species    "Homo", "Mus" or blank
+   \param[out] match      The best matching entry
+   \param[out] bestAlign1 The alignment of our sequence
+   \param[out] bestAlign2 The alignment of the database sequence
+   \return                The score for the match
+
+   Scans a sequence against the specified database.
+
+   - 31.03.20 Original   By: ACRM
+*/
+REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
+                   char *match, char *bestAlign1, char *bestAlign2)
 {
-   char filename[MAXBUFF+1];
-   BOOL noEnv;
-   FILE *dbFp = NULL;
-   REAL maxScore = 0.0;
-   char bestMatch[MAXBUFF+1];
-   char align1[HUGEBUFF+1],
-        align2[HUGEBUFF+1];
+   char        filename[MAXBUFF+1],
+               bestMatch[MAXBUFF+1];
+   BOOL        noEnv;
+   FILE        *dbFp = NULL;
+   REAL        maxScore = 0.0;
+   static char align1[HUGEBUFF+1],
+               align2[HUGEBUFF+1];
    
    sprintf(filename, "%s/%s.dat", AGLDATADIR, type);
 
    if(verbose)
-   {
       fprintf(stderr,"\n\nChecking %s\n", type);
-   }
    
    if((dbFp = blOpenFile(filename, AGLDATADIR, "r", &noEnv))!=NULL)
    {
@@ -233,7 +363,8 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species, char *
             if(score > maxScore)
             {
                if(verbose)
-                  fprintf(stderr, "Comparing with %s *** %.4f\n", header, score);
+                  fprintf(stderr, "Comparing with %s *** %.4f\n",
+                          header, score);
             
                maxScore = score;
                strncpy(bestMatch, header, MAXBUFF);
@@ -242,13 +373,14 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species, char *
             }
             else if(score == maxScore)
             {
-               /* If the scores are the same, choose the one with the better 
-                  gene name
+               /* If the scores are the same, choose the one with the 
+                  better gene name
                */
                if(PreferHeader(header, bestMatch))
                {
                   if(verbose)
-                     fprintf(stderr, "Comparing with %s *** %.4f\n", header, score);
+                     fprintf(stderr, "Comparing with %s *** %.4f\n",
+                             header, score);
             
                   maxScore = score;
                   strncpy(bestMatch,  header, MAXBUFF);
@@ -257,7 +389,8 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species, char *
                }
                else if(verbose)
                {
-                  fprintf(stderr, "Comparing with %s (rejected %.4f)\n", header, score);
+                  fprintf(stderr, "Comparing with %s (rejected %.4f)\n",
+                          header, score);
                }
             }
             else if(verbose)
@@ -277,68 +410,102 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species, char *
 
 
 /************************************************************************/
+/*>BOOL PreferHeader(char *newHeader, char *oldHeader)
+   ---------------------------------------------------
+*//**
+   \param[in]  newHeader  The FAA header for the new entry
+   \param[in]  oldHeader  The FAA header for the current best entry
+   \return                Should be use the new entry?
+
+   Used when two hits score the same. Tests the names of the hits and
+   sees if the new one has a preferred name
+
+   - 31.03.20 Original   By: ACRM
+*/
 BOOL PreferHeader(char *newHeader, char *oldHeader)
 {
    char newID[SMALLBUFF+1],
-        oldID[SMALLBUFF+1];
-   char newClass[SMALLBUFF],
-      newDistal[SMALLBUFF],
-      newFamily[SMALLBUFF],
-      newSubclass[SMALLBUFF];
-   int newAllele;
-   char oldClass[SMALLBUFF],
-      oldDistal[SMALLBUFF],
-      oldFamily[SMALLBUFF],
-      oldSubclass[SMALLBUFF];
-   int oldAllele;
-   int oldNum, newNum;
+        oldID[SMALLBUFF+1],
+        newClass[SMALLBUFF],
+        newDistal[SMALLBUFF],
+        newFamily[SMALLBUFF],
+        newSubclass[SMALLBUFF],
+        oldClass[SMALLBUFF],
+        oldDistal[SMALLBUFF],
+        oldFamily[SMALLBUFF],
+        oldSubclass[SMALLBUFF];
+   int  newAllele,
+        oldAllele,
+        oldNum, newNum;
    
    GetDomainID(newHeader, newID, SMALLBUFF);
    GetDomainID(oldHeader, oldID, SMALLBUFF);
 
-   FindFields(newID, newClass, newSubclass, newFamily, &newAllele, newDistal);
-   FindFields(oldID, oldClass, oldSubclass, oldFamily, &oldAllele, oldDistal);
+   FindFields(newID, newClass, newSubclass, newFamily, &newAllele,
+              newDistal);
+   FindFields(oldID, oldClass, oldSubclass, oldFamily, &oldAllele,
+              oldDistal);
 
-   /* if it's non-distal and the current best is distal, keep the new one */
+   /* If it's non-distal and the current best is distal, 
+      keep the new one 
+   */
    if((newDistal[0] == '\0') && (oldDistal[0] != '\0'))
       return(TRUE);
    
-   /* If the sub-class is numeric and the old one isn't, keep the new one */
+   /* If the sub-class is numeric and the old one isn't, 
+      keep the new one 
+   */
    oldNum = atoi(oldSubclass);
    newNum = atoi(newSubclass);
-   
    if((newNum > 0) && (oldNum == 0))
       return(TRUE);
 
-   /* If both are numeric and the new one is lower, keep the new one  */
-   if((newNum && oldNum) &&
-      (newNum < oldNum))
+   /* If both are numeric and the new one is lower, 
+      keep the new one  
+   */
+   if((newNum && oldNum) && (newNum < oldNum))
       return(TRUE);
 
-   /* If the family is numeric and the old one isn't, keep the new one */
+   /* If the family is numeric and the old one isn't,
+      keep the new one 
+   */
    oldNum = atoi(oldFamily);
    newNum = atoi(newFamily);
-   
    if((newNum > 0) && (oldNum == 0))
       return(TRUE);
 
-   /* If both are numeric and the new one is lower, keep the new one   */
-   if((newNum && oldNum) &&
-      (newNum < oldNum))
+   /* If both are numeric and the new one is lower,
+      keep the new one   
+   */
+   if((newNum && oldNum) && (newNum < oldNum))
       return(TRUE);
 
-   /* Keep the lowest allele */
+   /* Keep the lowest allele                                            
+   */
    if(newAllele < oldAllele)
       return(TRUE);
 
    return(FALSE);
 }
 
+
 /************************************************************************/
+/*>void GetDomainID(char *header, char *id, int maxbuff)
+   -----------------------------------------------------
+*//**
+   \param[in]  header   The Fasta header
+   \param[out] id       The ID extracted from the header
+   \param[out] maxbuff  Maximum buffer size for the ID
+
+   Extracts the IMGT domain identifier from the FASTA header
+
+   - 31.03.20 Original   By: ACRM
+*/
 void GetDomainID(char *header, char *id, int maxbuff)
 {
    int start, i,
-      headerLen;
+       headerLen;
+
    headerLen = strlen(header);
    
    for(start=0; start<headerLen; start++)
@@ -349,6 +516,7 @@ void GetDomainID(char *header, char *id, int maxbuff)
          break;
       }
    }
+   
    for(i=0; i<headerLen-start && i<maxbuff; i++)
    {
       id[i] = header[start+i];
@@ -357,13 +525,22 @@ void GetDomainID(char *header, char *id, int maxbuff)
          break;
       }
    }
+   
    id[i] = '\0';
 }
 
 
 /************************************************************************/
-/* theSeq is the sequence of interest
-   seq is the database sequence
+/*>REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
+   ---------------------------------------------------------------------
+*//**
+   \param[in]   theSeq   the sequence of interest
+   \param[in]   seq      the database sequence
+   \param[out]  align1   Alignment of our sequence
+   \param[out]  align2   Alignment of database sequence
+   \return               Score for alignment
+
+   - 31.03.20 Original   By: ACRM
 */
 REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
 {
@@ -381,21 +558,39 @@ REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
                    &alignLen);
    align1[alignLen] = align2[alignLen] = '\0';
    
-   return ((REAL)score / (REAL)shortSeqLen);
+   return((REAL)score / (REAL)shortSeqLen);
 }
+
 
 /************************************************************************/
 /*>void Usage(void)
    ----------------
+ *//**
    Print usage message.
 
-   17.10.95 Original    By: ACRM
-   04.03.15 V1.2
-   28.10.15 V1.3
+-  31.03.20 Original    By: ACRM
 */
 void Usage(void)
 {
+   printf("\nagl V1.0 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
 
+   printf("Usage: agl [-h|-l] [-s species] [-v] [file.faa [out.txt]]\n");
+   printf("           -h Heavy chain\n");
+   printf("           -l Light chain\n");
+   printf("           -s Specify a species (Homo or Mus)\n");
+   printf("           -v Verbose\n");
+
+   printf("\nagl (Assign Germ Line) is a program for assigning IMGT \
+germlines to\n");
+   printf("antibody light or heavy chains. It does a 3-frame \
+translation of the\n");
+   printf("IMGT germline sequences and uses sequence identity at the \
+amino acid\n");
+   printf("level to find the best match. If more than one sequence \
+scores the\n");
+   printf("same, it takes no-distal over distal and then selects on \
+the basis\n");
+   printf("of the lowest sub-class, family and allele number.\n\n");
 }
 
 
@@ -403,18 +598,19 @@ void Usage(void)
 /*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                      BOOL *verbose, int *chainType, char *species)
    ---------------------------------------------------------------------
-   Input:   int      argc        Argument count
-            char     **argv      Argument array
-   Output:  char     *infile     Input filename (or blank string)
-            char     *outfile    Output filename (or blank string)
-            BOOL     *verbose    Verbose
-            int      *chainType  Chain type
-            char     *species    Species or blank string
-   Returns: BOOL                 Success
+*//**
+   \param[in]   argc        Argument count
+   \param[in]   **argv      Argument array
+   \param[out]  *infile     Input filename (or blank string)
+   \param[out]  *outfile    Output filename (or blank string)
+   \param[out]  *verbose    Verbose
+   \param[out]  *chainType  Chain type
+   \param[out]  *species    Species or blank string
+   \return                  Success
 
    Parse the command line
 
-   26.03.20 Original    By: ACRM
+-  31.03.20 Original    By: ACRM
 */
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                   BOOL *verbose, int *chainType, char *species)
@@ -422,9 +618,8 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
    argc--;
    argv++;
    
-   infile[0]   = outfile[0] = '\0';
+   infile[0]  = outfile[0] = '\0';
    species[0] = '\0';
-   
    
    while(argc)
    {
@@ -459,7 +654,7 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
       }
       else
       {
-         /* Check that there are only 2-4 arguments left                */
+         /* Check that there are no more than 2 arguments left          */
          if(argc > 2)
             return(FALSE);
 
@@ -479,11 +674,28 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
    return(TRUE);
 }
 
+
+/************************************************************************/
+/*>void RemoveSequence(char *seq, char *align1, char *align2, 
+                       BOOL verbose)
+   -----------------------------------------------------------
+*//**
+   \param[in,out]   seq        The sequence
+   \param[in]       align1     Our sequence aligned
+   \param[in]       align2     Database sequence aligned
+   \param[in]       verbose    Verbose output
+
+   Finds the region of the sequence that has been aligned with a 
+   database sequence and removes it.
+
+   - 31.03.20 Original   By: ACRM
+*/
 void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
 {
-   int alnLen = MAX(strlen(align1), strlen(align2));
-   int i, j, start, stop;
-   char buffer[HUGEBUFF+1];
+   int         i, j,
+               start, stop,
+               alnLen = MAX(strlen(align1), strlen(align2));;
+   static char buffer[HUGEBUFF+1];
 
    if(verbose)
    {
@@ -493,8 +705,7 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
       fprintf(stderr, "Alignment length: %d\n", alnLen);
    }
    
-   
-   /* Find the start of the aligned region */
+   /* Find the start of the aligned region                              */
    for(i=0; i<alnLen; i++)
    {
       if((align1[i] != '-') &&
@@ -504,7 +715,8 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
          break;
       }
    }
-   /* Find the end of the aligned region */
+   
+   /* Find the end of the aligned region                                */
    for(i=alnLen-1; i>start; i--)
    {
       if((align1[i] != '-') &&
@@ -516,11 +728,9 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
    }
 
    if(verbose)
-   {
       fprintf(stderr, "Start: %d Stop: %d\n", start, stop);
-   }
    
-   /* Copy up to the start */
+   /* Copy up to the start                                              */
    j=0;
    for(i=0; i<start; i++)
    {
@@ -530,7 +740,8 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
       }
 
    }
-   /* Copy after the end */
+   
+   /* Copy after the end                                                */
    for(i=stop+1; i<alnLen; i++)
    {
       if(align1[i] != '-')
@@ -539,22 +750,35 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
       }
    }
    buffer[j] = '\0';
-   /* Copy this back into seq */
-   i=strlen(seq);
+   
+   /* Copy this back into seq                                           */
+   i = strlen(seq);
    strncpy(seq, buffer, i);
    seq[i] = '\0';
    
    if(verbose)
-   {
       fprintf(stderr, "Output seq:       %s\n", seq);
-   }
 }
 
+
+/************************************************************************/
+/*>void PrintResult(FILE *out, char *domain, REAL score, char *match)
+   ------------------------------------------------------------------
+*//**
+   \param[in]   out        Output file pointer
+   \param[in]   domain     Domain label
+   \param[in]   score      Score for match
+   \param[in]   match      Match FASTA header
+
+   Prints the match information
+
+   - 31.03.20 Original   By: ACRM
+*/
 void PrintResult(FILE *out, char *domain, REAL score, char *match)
 {
    char id[32],
-      frame[8],
-      species[32];
+        frame[8],
+        species[32];
    
    match = strchr(match, '_');
    match++;
@@ -570,5 +794,6 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match)
    match++;
    strncpy(species, match, 31);
    
-   fprintf(out, "%-7s : %.4f : %-12s : %s : %s\n", domain, score, id, frame, species);
+   fprintf(out, "%-7s : %.4f : %-12s : %s : %s\n",
+           domain, score, id, frame, species);
 }
