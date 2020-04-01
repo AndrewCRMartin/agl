@@ -51,16 +51,19 @@
 *************************************************************************/
 /* Includes
 */
-#define SMALLBUFF         80
-#define MAXBUFF           256
-#define HUGEBUFF          1024
-#define CHAINTYPE_UNKNOWN 0
-#define CHAINTYPE_LIGHT   1
-#define CHAINTYPE_HEAVY   2
-#define AGLDATADIR        "AGLDATADIR"
-#define THRESHOLD_LV      0.5
-#define THRESHOLD_LJ      0.5
-#define THRESHOLD_LC      0.5
-#define THRESHOLD_HV      0.5
-#define THRESHOLD_HJ      0.5
-#define THRESHOLD_HC      0.5
+#define SMALLBUFF           80  /* Buffers                                                */
+#define MAXBUFF             256
+#define HUGEBUFF            1024
+#define CHAINTYPE_UNKNOWN   0   /* Chain types                                            */
+#define CHAINTYPE_LIGHT     1
+#define CHAINTYPE_HEAVY     2
+#define AGLDATADIR          "AGLDATADIR" /* Environment variable name for data dir        */
+#define THRESHOLD_LV        0.5  /* Scores for an alignment to be significant             */
+#define THRESHOLD_LJ        0.5
+#define THRESHOLD_LC        0.5
+#define THRESHOLD_HV        0.5
+#define THRESHOLD_HJ        0.5
+#define THRESHOLD_HC        0.5
+#define THRESHOLD_LEN_SCORE 0.01 /* Score can drop by this if the length increases         */
+#define THRESHOLD_SCORE_INC 0.02 /* Score must increase by this much if length is shorter  */
+#define THRESHOLD_SCORE_LEN 30   /* length can be this much shorter if the score increases */

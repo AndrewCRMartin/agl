@@ -79,7 +79,7 @@ static int IntMatch(char *in, regmatch_t *pMatches, int matchNum);
 #ifdef TEST
 int test_findfields(void);
 static void testPrint(char *id, char *class, char *subclass, char *family,
-                      int allele, char *distal)
+                      int allele, char *distal);
 
 /************************************************************************/
 /*>int main(int argc, char **argv)
@@ -217,6 +217,18 @@ int test_findfields(void)
    FindFields("TRAV16D/DV11*01",
               class, subclass, family, &allele, distal);
    testPrint("TRAV16D/DV11*01",
+             class, subclass, family, allele, distal);
+
+   printf("\n\nExtras\n\n");
+   
+   FindFields("IGHV4-4*08",
+              class, subclass, family, &allele, distal);
+   testPrint("IGHV4-4*08",
+             class, subclass, family, allele, distal);
+
+   FindFields("IGHV4-59*01",
+              class, subclass, family, &allele, distal);
+   testPrint("IGHV4-59*01",
              class, subclass, family, allele, distal);
 
    return(0);

@@ -90,6 +90,7 @@ BOOL PreferHeader(char *newHeader, char *oldHeader);
 void GetDomainID(char *header, char *id, int maxbuff);
 void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose);
 void PrintResult(FILE *out, char *domain, REAL score, char *match);
+int CalculateDbLen(char *seq);
 
 /************************************************************************/
 
@@ -112,7 +113,8 @@ int main(int argc, char **argv)
         dataDir[MAXBUFF+1];
    BOOL verbose   = FALSE;
    int  chainType = CHAINTYPE_UNKNOWN;
-   
+
+
    if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType,
                    species, dataDir))
    {
@@ -355,6 +357,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
    BOOL        noEnv;
    FILE        *dbFp = NULL;
    REAL        maxScore = 0.0;
+   int         maxDbLen = 0;
    static char align1[HUGEBUFF+1],
                align2[HUGEBUFF+1];
 
@@ -381,19 +384,32 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
             (strstr(header, species) != NULL))
          {
             REAL score;
+            int  dbLen;
          
-            if(verbose)
-               fprintf(stderr, "Comparing with %s\n", header);
-            
             score = CompareSeqs(theSeq, seq, align1, align2);
-            if(score > maxScore)
+            dbLen = CalculateDbLen(align2);
+            
+#ifdef DEBUG
+            if(verbose)
+               fprintf(stderr, "Comparing with %s {%f, %f} {%d, %d}\n",
+                       header, score, maxScore, dbLen, maxDbLen);
+#endif 
+            if(/* Length has increased and score not decreased much */
+               ((dbLen > maxDbLen) && (score > (maxScore-THRESHOLD_LEN_SCORE))) ||
+               /* Score has increased and length not shorter */
+               ((score > maxScore) && (dbLen >= maxDbLen))                      ||
+               /* Score has increased significantly while length is shorter */
+               ((score >  (maxScore + THRESHOLD_SCORE_INC)) &&
+                (dbLen >= (maxDbLen-THRESHOLD_SCORE_LEN))))
+               
             {
                if(verbose)
                   fprintf(stderr, "Comparing with %s *** %.4f\n",
                           header, score);
             
                maxScore = score;
-               strncpy(bestMatch, header, MAXBUFF);
+               maxDbLen = dbLen;
+               strncpy(bestMatch,  header, MAXBUFF);
                strncpy(bestAlign1, align1, HUGEBUFF);
                strncpy(bestAlign2, align2, HUGEBUFF);
             }
@@ -405,7 +421,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
                if(PreferHeader(header, bestMatch))
                {
                   if(verbose)
-                     fprintf(stderr, "Comparing with %s *** %.4f\n",
+                     fprintf(stderr, "Comparing with %s *** %.4f (Chosen on name)\n",
                              header, score);
             
                   maxScore = score;
@@ -447,6 +463,20 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
    return(maxScore);
 }
 
+
+/************************************************************************/
+int CalculateDbLen(char *seq)
+{
+   int i,
+       len=0;
+
+   for(i=0; i<strlen(seq); i++)
+   {
+      if(seq[i] != '-')
+         len++;
+   }
+   return(len);
+}
 
 /************************************************************************/
 /*>BOOL PreferHeader(char *newHeader, char *oldHeader)
@@ -504,6 +534,8 @@ BOOL PreferHeader(char *newHeader, char *oldHeader)
    */
    if((newNum && oldNum) && (newNum < oldNum))
       return(TRUE);
+   if(newNum > oldNum)
+      return(FALSE);
 
    /* If the family is numeric and the old one isn't,
       keep the new one 
@@ -518,6 +550,8 @@ BOOL PreferHeader(char *newHeader, char *oldHeader)
    */
    if((newNum && oldNum) && (newNum < oldNum))
       return(TRUE);
+   if(newNum > oldNum)
+      return(FALSE);
 
    /* Keep the lowest allele                                            
    */
@@ -853,6 +887,6 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match)
    match++;
    strncpy(species, match, 31);
    
-   fprintf(out, "%-7s : %.4f : %-12s : %s : %s\n",
-           domain, score, id, frame, species);
+   fprintf(out, "%-7s : %6.2f%% : %-12s : %s : %s\n",
+           domain, 100.0*score, id, frame, species);
 }

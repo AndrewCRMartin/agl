@@ -1,5 +1,7 @@
 EXE=agl
 OFILES=agl.o findfields.o
+HFILES=agl.h findfields.h
+
 LIBS=$(HOME)/lib
 INCLUDE=$(HOME)/include
 CFLAGS=-g
@@ -9,7 +11,10 @@ CC=cc $(CFLAGS) -L$(LIBS) -I$(INCLUDE)
 $(EXE) : $(OFILES)
 	$(CC) -o $@ $(OFILES) -lbiop -lgen -lm -lxml2
 
-.c.o :
+agl.o : agl.c $(HFILES)
+	$(CC) -c -o $@ $<
+
+findfields.o : findfields.c $(HFILES)
 	$(CC) -c -o $@ $<
 
 clean :
