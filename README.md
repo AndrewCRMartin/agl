@@ -6,3 +6,33 @@ Assign Germ Line
 
 A germline assignment program for antibody protein sequences
 
+
+Problems
+--------
+There is a philosophical problem with germline assignment.
+
+Take this Homo sapiens VH sequence from 11258
+EVQLVESGPGLVKPSETLSLTCTVSGFSLTRFGVHWVRQPPGKGLEWLGV
+IWRGGSTDYNAAFVSRLTISKDNSKNQVSLKLSSVTAADTAVYYCSNHYY
+GSSDYALDNWGQGTLVTVSS
+
+It matches IGHV4-4*08 with 70/97 residues (72.16%) and
+it matches IGHV4-59*03 with 70/96 resideus (72.92%)
+
+The second one has a higher, yet the first has better coverage (the
+germline sequence convers more residues - the R is missing from the
+end of the second one's sequence).
+
+domainGapAlign selects IGHV4-4*08
+
+Bizarrely, however, domainGapAlign shows them both as 72.9% sequence
+and says there is an overlap of 96 residues for both (this is not the
+case)! 
+
+It also lists IGHV4-59*01, IGHV4-59*08, IGHV4-59*13, IGHV4-59*02 as
+having the same percent identity (72.9%) and overlap (96 residues) and
+all but IGHV4-59*02 have the same Smith Watermal score (462;
+IGHV4-59*02 scores 461). I assume that this is calculated from the DNA
+information - i.e. how many base changes are needed for an amino acid
+change. 
+
