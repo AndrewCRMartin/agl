@@ -78,11 +78,13 @@
 int main(int argc, char **argv);
 void Usage(void);
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                  BOOL *verbose, int *chainType, char *species);
+                  BOOL *verbose, int *chainType, char *species,
+                  char *dataDir);
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
-                char *species);
+                char *species, char *dataDir);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species,
-                   char *match, char *bestAlign1, char *bestAlign2);
+                   char *match, char *bestAlign1, char *bestAlign2,
+                   char *dataDir);
 REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2);
 BOOL PreferHeader(char *newHeader, char *oldHeader);
 void GetDomainID(char *header, char *id, int maxbuff);
@@ -106,12 +108,13 @@ int main(int argc, char **argv)
 {
    char infile[MAXBUFF+1],
         outfile[MAXBUFF+1],
-        species[MAXBUFF+1];
+        species[MAXBUFF+1],
+        dataDir[MAXBUFF+1];
    BOOL verbose   = FALSE;
    int  chainType = CHAINTYPE_UNKNOWN;
    
    if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType,
-                   species))
+                   species, dataDir))
    {
       FILE *in  = stdin,
            *out = stdout;
@@ -123,7 +126,7 @@ int main(int argc, char **argv)
 
          if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
-            ProcessSeq(out, seq, verbose, chainType, species);
+            ProcessSeq(out, seq, verbose, chainType, species, dataDir);
             free(seq);
          }
          if(in  != stdin)  fclose(in);
@@ -146,7 +149,7 @@ int main(int argc, char **argv)
 
 /************************************************************************/
 /*>void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
-                char *species)
+                   char *species, char *dataDir)
    ------------------------------------------------------------------
 *//**
    \param[in]   out        Output file pointer
@@ -154,13 +157,14 @@ int main(int argc, char **argv)
    \param[in]   verbose    Verbose output
    \param[in]   chainType  Type of chain (or unknown)
    \param[in]   species    "Homo", "Mus" or blank
+   \param[in]   dataDir    Data directory
 
    Processes a sequence sending output to the specified file
 
    - 31.03.20 Original   By: ACRM
 */
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
-                char *species)
+                char *species, char *dataDir)
 {
    char        lvMatch[MAXBUFF+1],
                hvMatch[MAXBUFF+1],
@@ -193,9 +197,11 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
    if(chainType == CHAINTYPE_UNKNOWN)
    {
       lvScore = ScanAgainstDB("light_v", seq, verbose, species,
-                              lvMatch,  lvBestAlign1, lvBestAlign2);
+                              lvMatch,  lvBestAlign1, lvBestAlign2,
+                              dataDir);
       hvScore = ScanAgainstDB("heavy_v", seq, verbose, species,
-                              hvMatch,  hvBestAlign1, hvBestAlign2);
+                              hvMatch,  hvBestAlign1, hvBestAlign2,
+                              dataDir);
 
       if((lvScore > hvScore) && (lvScore > THRESHOLD_LV))
       {
@@ -209,9 +215,11 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
       if(chainType == CHAINTYPE_UNKNOWN)
       {
          lcScore  = ScanAgainstDB("light_c", seq, verbose, species,
-                                  lcMatch,  lcBestAlign1,  lcBestAlign2);
+                                  lcMatch,  lcBestAlign1,  lcBestAlign2,
+                                  dataDir);
          CH1Score = ScanAgainstDB("CH1",     seq, verbose, species,
-                                  CH1Match, CH1BestAlign1, CH1BestAlign2);
+                                  CH1Match, CH1BestAlign1, CH1BestAlign2,
+                                  dataDir);
       }
 
       if((lcScore > CH1Score) && (lcScore > THRESHOLD_LC))
@@ -231,14 +239,16 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
    case CHAINTYPE_LIGHT:
       if(lvScore < 0.0)
          lvScore = ScanAgainstDB("light_v", seq, verbose, species,
-                                 lvMatch, lvBestAlign1, lvBestAlign2);
+                                 lvMatch, lvBestAlign1, lvBestAlign2,
+                                 dataDir);
       if(lvScore > THRESHOLD_LV)
       {
          RemoveSequence(seq, lvBestAlign1, lvBestAlign2, verbose);
          fprintf(out, "VL  : %f : %s\n", lvScore, lvMatch);
 
          ljScore = ScanAgainstDB("light_j", seq, verbose, species,
-                                 ljMatch, bestAlign1, bestAlign2);
+                                 ljMatch, bestAlign1, bestAlign2,
+                                 dataDir);
          if(ljScore > THRESHOLD_LJ)
          {
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
@@ -248,7 +258,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
 
       if(lcScore < 0.0)
          lcScore = ScanAgainstDB("light_c", seq, verbose, species,
-                                 lcMatch, lcBestAlign1, lcBestAlign2);
+                                 lcMatch, lcBestAlign1, lcBestAlign2,
+                                 dataDir);
       if(lcScore > THRESHOLD_LC)
       {
          RemoveSequence(seq, lcBestAlign1, lcBestAlign2, verbose);
@@ -260,14 +271,16 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
    case CHAINTYPE_HEAVY:
       if(hvScore < 0.0)
          hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species,
-                                  hvMatch, hvBestAlign1, hvBestAlign2);
+                                  hvMatch, hvBestAlign1, hvBestAlign2,
+                                  dataDir);
       if(hvScore > THRESHOLD_HV)
       {
          RemoveSequence(seq, hvBestAlign1, hvBestAlign2, verbose);
          PrintResult(out, "VH", hvScore, hvMatch);
          
          hjScore = ScanAgainstDB("heavy_j", seq, verbose, species,
-                                 hjMatch, bestAlign1, bestAlign2);
+                                 hjMatch, bestAlign1, bestAlign2,
+                                 dataDir);
          if(hjScore > THRESHOLD_HJ)
          {
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
@@ -277,7 +290,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
 
       if(CH1Score < 0.0)
          CH1Score = ScanAgainstDB("CH1", seq, verbose, species,
-                                  CH1Match, CH1BestAlign1, CH1BestAlign2);
+                                  CH1Match, CH1BestAlign1, CH1BestAlign2,
+                                  dataDir);
       if(CH1Score > THRESHOLD_HC)
       {
          RemoveSequence(seq, CH1BestAlign1, CH1BestAlign2, verbose);
@@ -285,7 +299,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
       }
       
       CH2Score = ScanAgainstDB("CH2", seq, verbose, species,
-                               CH2Match, bestAlign1, bestAlign2);
+                               CH2Match, bestAlign1, bestAlign2,
+                               dataDir);
       if(CH2Score > THRESHOLD_HC)
       {
          RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
@@ -293,7 +308,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
       }
 
       CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species,
-                                  CH3CHSMatch, bestAlign1, bestAlign2);
+                                  CH3CHSMatch, bestAlign1, bestAlign2,
+                                  dataDir);
       if(CH3CHSScore > THRESHOLD_HC)
       {
          RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
@@ -312,7 +328,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
 /************************************************************************/
 /*>REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, 
                       char *species, char *match, char *bestAlign1, 
-                      char *bestAlign2)
+                      char *bestAlign2, char *dataDir)
+
    -------------------------------------------------------------------------
 *//**
    \param[in]  type       The database type against which we scan
@@ -322,6 +339,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
    \param[out] match      The best matching entry
    \param[out] bestAlign1 The alignment of our sequence
    \param[out] bestAlign2 The alignment of the database sequence
+   \param[in]  dataDir    Data directory
    \return                The score for the match
 
    Scans a sequence against the specified database.
@@ -329,7 +347,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
    - 31.03.20 Original   By: ACRM
 */
 REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
-                   char *match, char *bestAlign1, char *bestAlign2)
+                   char *match, char *bestAlign1, char *bestAlign2,
+                   char *dataDir)
 {
    char        filename[MAXBUFF+1],
                bestMatch[MAXBUFF+1];
@@ -338,9 +357,16 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
    REAL        maxScore = 0.0;
    static char align1[HUGEBUFF+1],
                align2[HUGEBUFF+1];
-   
-   sprintf(filename, "%s/%s.dat", AGLDATADIR, type);
 
+   if(dataDir[0] != '\0')
+   {
+      sprintf(filename, "%s/%s.dat", dataDir, type);
+   }
+   else
+   {
+      sprintf(filename, "%s.dat", type);
+   }
+   
    if(verbose)
       fprintf(stderr,"\n\nChecking %s\n", type);
    
@@ -402,6 +428,19 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
          free(seq);
       }
       FCLOSE(dbFp);
+   }
+   else
+   {
+      fprintf(stderr, "\nError (agl): Unable to open data file (%s)\n",
+              filename);
+      if(noEnv)
+      {
+         fprintf(stderr, "   Set the environment variable: %s\n",
+                 AGLDATADIR);
+      }
+      fprintf(stderr, "\n");
+      
+      exit(1);
    }
 
    strncpy(match, bestMatch, MAXBUFF);
@@ -574,10 +613,12 @@ void Usage(void)
 {
    printf("\nagl V1.0 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
 
-   printf("Usage: agl [-h|-l] [-s species] [-v] [file.faa [out.txt]]\n");
-   printf("           -h Heavy chain\n");
-   printf("           -l Light chain\n");
+   printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [file.faa \
+[out.txt]]\n");
+   printf("           -H Heavy chain\n");
+   printf("           -L Light chain\n");
    printf("           -s Specify a species (Homo or Mus)\n");
+   printf("           -d Specify data directory\n");
    printf("           -v Verbose\n");
 
    printf("\nagl (Assign Germ Line) is a program for assigning IMGT \
@@ -590,13 +631,20 @@ amino acid\n");
 scores the\n");
    printf("same, it takes no-distal over distal and then selects on \
 the basis\n");
-   printf("of the lowest sub-class, family and allele number.\n\n");
+   printf("of the lowest sub-class, family and allele number.\n");
+
+   printf("\nIf a data directory is not specified using -d, it will \
+first look in the\n");
+   printf("current directory for files and then in the directory \
+specified using the\n");
+   printf("environment variable %s\n\n", AGLDATADIR);
 }
 
 
 /************************************************************************/
 /*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                     BOOL *verbose, int *chainType, char *species)
+                     BOOL *verbose, int *chainType, char *species,
+                     char *dataDir)
    ---------------------------------------------------------------------
 *//**
    \param[in]   argc        Argument count
@@ -606,6 +654,7 @@ the basis\n");
    \param[out]  *verbose    Verbose
    \param[out]  *chainType  Chain type
    \param[out]  *species    Species or blank string
+   \param[out]  *dataDir    Data directory or blank string
    \return                  Success
 
    Parse the command line
@@ -613,13 +662,14 @@ the basis\n");
 -  31.03.20 Original    By: ACRM
 */
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                  BOOL *verbose, int *chainType, char *species)
+                  BOOL *verbose, int *chainType, char *species,
+                  char *dataDir)
 {
    argc--;
    argv++;
    
    infile[0]  = outfile[0] = '\0';
-   species[0] = '\0';
+   species[0] = dataDir[0] = '\0';
    
    while(argc)
    {
@@ -630,21 +680,30 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
          case 'v':
             *verbose = TRUE;
             break;
+         case 'L':
          case 'l':
             if(*chainType != CHAINTYPE_UNKNOWN)
                return(FALSE);
             *chainType = CHAINTYPE_LIGHT;
             break;
-         case 'h':
+         case 'H':
             if(*chainType != CHAINTYPE_UNKNOWN)
                return(FALSE);
             *chainType = CHAINTYPE_HEAVY;
             break;
+         case 'h':
+            return(FALSE);
          case 's':
             argc--; argv++;
             if(!argc)
                return(FALSE);
             strncpy(species, argv[0], MAXBUFF);
+            break;
+         case 'd':
+            argc--; argv++;
+            if(!argc)
+               return(FALSE);
+            strncpy(dataDir, argv[0], MAXBUFF);
             break;
          default:
             return(FALSE);

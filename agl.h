@@ -57,7 +57,7 @@
 #define CHAINTYPE_UNKNOWN 0
 #define CHAINTYPE_LIGHT   1
 #define CHAINTYPE_HEAVY   2
-#define AGLDATADIR        "mydata"
+#define AGLDATADIR        "AGLDATADIR"
 #define THRESHOLD_LV      0.5
 #define THRESHOLD_LJ      0.5
 #define THRESHOLD_LC      0.5
