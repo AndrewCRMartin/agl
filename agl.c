@@ -244,7 +244,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
       if(lvScore > THRESHOLD_LV)
       {
          RemoveSequence(seq, lvBestAlign1, lvBestAlign2, verbose);
-         fprintf(out, "VL  : %f : %s\n", lvScore, lvMatch);
+         PrintResult(out, "VL", lvScore, lvMatch);
 
          ljScore = ScanAgainstDB("light_j", seq, verbose, species,
                                  ljMatch, bestAlign1, bestAlign2,
@@ -252,7 +252,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
          if(ljScore > THRESHOLD_LJ)
          {
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
-            fprintf(out, "JL  : %f : %s\n", ljScore, ljMatch);
+            PrintResult(out, "JL", ljScore, ljMatch);
          }
       }
 
@@ -263,7 +263,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
       if(lcScore > THRESHOLD_LC)
       {
          RemoveSequence(seq, lcBestAlign1, lcBestAlign2, verbose);
-         fprintf(out, "CL  : %f : %s\n", lcScore, lcMatch);
+         PrintResult(out, "CL", lcScore, lcMatch);
       }
       
       break;
