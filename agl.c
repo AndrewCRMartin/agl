@@ -638,8 +638,10 @@ REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
 
    shortSeqLen = CalcShortSeqLen(align1, align2);
 
-   fprintf(stderr, ">>>%s\n", align1);
+#ifdef DEBUG   
+   fprintf(stderr, "\n>>>%s\n", align1);
    fprintf(stderr, ">>>%s %d\n", align2, shortSeqLen);
+#endif
    
    return((REAL)score / (REAL)shortSeqLen);
 }
