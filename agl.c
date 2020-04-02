@@ -91,6 +91,7 @@ void GetDomainID(char *header, char *id, int maxbuff);
 void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose);
 void PrintResult(FILE *out, char *domain, REAL score, char *match);
 int CalculateDbLen(char *seq);
+int CalcShortSeqLen(char *align1, char *align2);
 
 /************************************************************************/
 
@@ -245,7 +246,6 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
                                  dataDir);
       if(lvScore > THRESHOLD_LV)
       {
-         RemoveSequence(seq, lvBestAlign1, lvBestAlign2, verbose);
          PrintResult(out, "VL", lvScore, lvMatch);
 
          ljScore = ScanAgainstDB("light_j", seq, verbose, species,
@@ -253,6 +253,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
                                  dataDir);
          if(ljScore > THRESHOLD_LJ)
          {
+            RemoveSequence(seq, lvBestAlign1, lvBestAlign2, verbose);
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
             PrintResult(out, "JL", ljScore, ljMatch);
          }
@@ -333,7 +334,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
                       char *species, char *match, char *bestAlign1, 
                       char *bestAlign2, char *dataDir)
 
-   -------------------------------------------------------------------------
+   -----------------------------------------------------------------------
 *//**
    \param[in]  type       The database type against which we scan
    \param[in]  theSeq     The sequences to test
@@ -395,14 +396,16 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
                fprintf(stderr, "Comparing with %s {%f, %f} {%d, %d}\n",
                        header, score, maxScore, dbLen, maxDbLen);
 #endif 
-            if(/* Length has increased and score not decreased much */
-               ((dbLen > maxDbLen) && (score > (maxScore-THRESHOLD_LEN_SCORE))) ||
-               /* Score has increased and length not shorter */
-               ((score > maxScore) && (dbLen >= maxDbLen))                      ||
-               /* Score has increased significantly while length is shorter */
+            if(/* Length has increased and score not decreased much     */
+               ((dbLen > maxDbLen) &&
+                (score > (maxScore-THRESHOLD_LEN_SCORE)))   ||
+               /* Score has increased and length not shorter            */
+               ((score > maxScore) && (dbLen >= maxDbLen))  ||
+               /* Score has increased significantly while length is 
+                  shorter 
+               */
                ((score >  (maxScore + THRESHOLD_SCORE_INC)) &&
                 (dbLen >= (maxDbLen-THRESHOLD_SCORE_LEN))))
-               
             {
                if(verbose)
                   fprintf(stderr, "Comparing with %s *** %.4f\n",
@@ -422,8 +425,8 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
                if(PreferHeader(header, bestMatch))
                {
                   if(verbose)
-                     fprintf(stderr, "Comparing with %s *** %.4f (Chosen on name)\n",
-                             header, score);
+                     fprintf(stderr, "Comparing with %s *** %.4f \
+(Chosen on name)\n", header, score);
             
                   maxScore = score;
                   strncpy(bestMatch,  header, MAXBUFF);
@@ -438,7 +441,8 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
             }
             else if(verbose)
             {
-               fprintf(stderr, "Comparing with %s\n", header);
+               fprintf(stderr, "Comparing with %s (%.4f)\n",
+                       header, score);
             }
          }
          
@@ -624,15 +628,54 @@ REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
    
    score = blAlign(theSeq, strlen(theSeq),
                    seq, strlen(seq),
-                   FALSE, /* verbose */
+                   FALSE, /* verbose  */
                    TRUE,  /* identity */
-                   5,     /* penalty */
+                   5,     /* penalty  */
                    align1,
                    align2,
                    &alignLen);
    align1[alignLen] = align2[alignLen] = '\0';
+
+   shortSeqLen = CalcShortSeqLen(align1, align2);
+
+   fprintf(stderr, ">>>%s\n", align1);
+   fprintf(stderr, ">>>%s %d\n", align2, shortSeqLen);
    
    return((REAL)score / (REAL)shortSeqLen);
+}
+
+
+/************************************************************************/
+int CalcShortSeqLen(char *align1, char *align2)
+{
+   int start, stop, i, len1=0, len2=0,
+      alnLen = strlen(align1);
+   
+
+   /* Find where the alignment starts                                   */
+   for(start=0; start<alnLen; start++)
+   {
+      if((align1[start] != '-') && (align2[start] != '-'))
+         break;
+   }
+   /* Find where the alignment stops                                    */
+   for(stop=alnLen-1; stop>start; stop--)
+   {
+      if((align1[stop] != '-') && (align2[stop] != '-'))
+         break;
+   }
+   /* Step between start and stop and calculate the number of residues 
+      in each sequence
+   */
+   for(i=start; i<=stop; i++)
+   {
+      if(align1[i] != '-')
+         len1++;
+      if(align2[i] != '-')
+         len2++;
+   }
+
+   return(MIN(len1, len2));
 }
 
 
