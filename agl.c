@@ -271,6 +271,27 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
       break;
 
    case CHAINTYPE_HEAVY:
+      if(CH3CHSScore < 0.0)
+         CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species,
+                                     CH3CHSMatch, bestAlign1, bestAlign2,
+                                     dataDir);
+      if(CH3CHSScore > THRESHOLD_HC)
+         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+      
+      if(CH2Score < 0.0)
+         CH2Score = ScanAgainstDB("CH2", seq, verbose, species,
+                                  CH2Match, bestAlign1, bestAlign2,
+                                  dataDir);
+      if(CH2Score > THRESHOLD_HC)
+         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+
+      if(CH1Score < 0.0)
+         CH1Score = ScanAgainstDB("CH1", seq, verbose, species,
+                                  CH1Match, CH1BestAlign1, CH1BestAlign2,
+                                  dataDir);
+      if(CH1Score > THRESHOLD_HC)
+         RemoveSequence(seq, CH1BestAlign1, CH1BestAlign2, verbose);
+      
       if(hvScore < 0.0)
          hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species,
                                   hvMatch, hvBestAlign1, hvBestAlign2,
@@ -290,34 +311,14 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
          }
       }
 
-      if(CH1Score < 0.0)
-         CH1Score = ScanAgainstDB("CH1", seq, verbose, species,
-                                  CH1Match, CH1BestAlign1, CH1BestAlign2,
-                                  dataDir);
-      if(CH1Score > THRESHOLD_HC)
-      {
-         RemoveSequence(seq, CH1BestAlign1, CH1BestAlign2, verbose);
-         PrintResult(out, "CH1", CH1Score, CH1Match);
-      }
-      
-      CH2Score = ScanAgainstDB("CH2", seq, verbose, species,
-                               CH2Match, bestAlign1, bestAlign2,
-                               dataDir);
-      if(CH2Score > THRESHOLD_HC)
-      {
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
-         PrintResult(out, "CH2", CH2Score, CH2Match);
-      }
 
-      CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species,
-                                  CH3CHSMatch, bestAlign1, bestAlign2,
-                                  dataDir);
+      if(CH1Score > THRESHOLD_HC)
+         PrintResult(out, "CH1", CH1Score, CH1Match);
+      if(CH2Score > THRESHOLD_HC)
+         PrintResult(out, "CH2", CH2Score, CH2Match);
       if(CH3CHSScore > THRESHOLD_HC)
-      {
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
          PrintResult(out, "CH3-CHS", CH3CHSScore, CH3CHSMatch);
-      }
-      
+
       break;
       
    default:
