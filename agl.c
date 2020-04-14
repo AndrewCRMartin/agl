@@ -253,8 +253,10 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
                                  dataDir);
          if(ljScore > THRESHOLD_LJ)
          {
+#ifdef REMOVESEQS
             RemoveSequence(seq, lvBestAlign1, lvBestAlign2, verbose);
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+#endif
             PrintResult(out, "JL", ljScore, ljMatch);
          }
       }
@@ -265,7 +267,9 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
                                  dataDir);
       if(lcScore > THRESHOLD_LC)
       {
+#ifdef REMOVESEQS
          RemoveSequence(seq, lcBestAlign1, lcBestAlign2, verbose);
+#endif
          PrintResult(out, "CL", lcScore, lcMatch);
       }
       
@@ -276,30 +280,35 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
          CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species,
                                      CH3CHSMatch, bestAlign1, bestAlign2,
                                      dataDir);
+#ifdef REMOVESEQS
       if(CH3CHSScore > THRESHOLD_HC)
          RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
-      
+#endif      
       if(CH2Score < 0.0)
          CH2Score = ScanAgainstDB("CH2", seq, verbose, species,
                                   CH2Match, bestAlign1, bestAlign2,
                                   dataDir);
+#ifdef REMOVESEQS
       if(CH2Score > THRESHOLD_HC)
          RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
-
+#endif
       if(CH1Score < 0.0)
          CH1Score = ScanAgainstDB("CH1", seq, verbose, species,
                                   CH1Match, CH1BestAlign1, CH1BestAlign2,
                                   dataDir);
+#ifdef REMOVESEQS
       if(CH1Score > THRESHOLD_HC)
          RemoveSequence(seq, CH1BestAlign1, CH1BestAlign2, verbose);
-      
+#endif      
       if(hvScore < 0.0)
          hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species,
                                   hvMatch, hvBestAlign1, hvBestAlign2,
                                   dataDir);
       if(hvScore > THRESHOLD_HV)
       {
+#ifdef REMOVESEQS
          RemoveSequence(seq, hvBestAlign1, hvBestAlign2, verbose);
+#endif
          PrintResult(out, "VH", hvScore, hvMatch);
          
          hjScore = ScanAgainstDB("heavy_j", seq, verbose, species,
@@ -307,7 +316,9 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
                                  dataDir);
          if(hjScore > THRESHOLD_HJ)
          {
+#ifdef REMOVESEQS
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+#endif
             PrintResult(out, "JH", hjScore, hjMatch);
          }
       }

@@ -36,3 +36,11 @@ IGHV4-59*02 scores 461). I assume that this is calculated from the DNA
 information - i.e. how many base changes are needed for an amino acid
 change. 
 
+Actual Problems
+---------------
+11351L gives VL IGKV3-11*01 instead of IGKV3D-11*02 (longer but a lot worse)
+
+11366H gives JH IGHJ3*01 instead of IGHJ1*01
+
+11390L gives VL IGLV2-14*01 instead of IGLV2-14*03 (which is longer and better)
+
