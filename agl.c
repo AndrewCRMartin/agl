@@ -1013,10 +1013,9 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
    
    strncpy(align1, inAlign1, HUGEBUFF);
    strncpy(align2, inAlign2, HUGEBUFF);
-   aln1=align1+strlen(align1);
-   aln2=align2+strlen(align2);
-   while((*aln1 == '-')  || (*aln2 == '-') ||
-         (*aln1 == '\0') || (*aln2 == '\0'))
+   aln1=align1+strlen(align1)-1;
+   aln2=align2+strlen(align2)-1;
+   while((*aln1 == '-')  || (*aln2 == '-'))
    {
       aln1--;
       aln2--;
