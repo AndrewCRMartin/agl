@@ -340,6 +340,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
 #endif
             PrintResult(out, "JH", hjScore, hjMatch);
+            if(showAlignment)
+               PrintAlignment(out, bestAlign1, bestAlign2);
          }
       }
 
