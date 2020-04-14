@@ -4,7 +4,7 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.0    
+   \version    V1.1    
    \date       31.03.20   
    \brief      Assigns IMGT germline
    
@@ -47,6 +47,7 @@
    Revision History:
    =================
    V1.0   31.03.20  Original
+   V1.1   14.04.20  Added -a
 
 *************************************************************************/
 /* Includes
@@ -78,10 +79,10 @@
 int main(int argc, char **argv);
 void Usage(void);
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                  BOOL *verbose, int *chainType, char *species,
-                  char *dataDir);
-void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
-                char *species, char *dataDir);
+                  BOOL *verbose, BOOL *showAlignment, int *chainType,
+                  char *species, char *dataDir);
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
+                int chainType, char *species, char *dataDir);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
                    char *dataDir);
@@ -92,6 +93,7 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose);
 void PrintResult(FILE *out, char *domain, REAL score, char *match);
 int CalculateDbLen(char *seq);
 int CalcShortSeqLen(char *align1, char *align2);
+void PrintAlignment(FILE *out, char *align1, char *align2);
 
 /************************************************************************/
 
@@ -112,12 +114,13 @@ int main(int argc, char **argv)
         outfile[MAXBUFF+1],
         species[MAXBUFF+1],
         dataDir[MAXBUFF+1];
-   BOOL verbose   = FALSE;
-   int  chainType = CHAINTYPE_UNKNOWN;
+   BOOL verbose       = FALSE,
+        showAlignment = FALSE;
+   int  chainType     = CHAINTYPE_UNKNOWN;
 
 
-   if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &chainType,
-                   species, dataDir))
+   if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &showAlignment,
+                   &chainType, species, dataDir))
    {
       FILE *in  = stdin,
            *out = stdout;
@@ -129,7 +132,8 @@ int main(int argc, char **argv)
 
          if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
-            ProcessSeq(out, seq, verbose, chainType, species, dataDir);
+            ProcessSeq(out, seq, verbose, showAlignment,
+                       chainType, species, dataDir);
             free(seq);
          }
          if(in  != stdin)  fclose(in);
@@ -151,23 +155,25 @@ int main(int argc, char **argv)
 
 
 /************************************************************************/
-/*>void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
-                   char *species, char *dataDir)
+/*>void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
+                   int chainType, char *species, char *dataDir)
    ------------------------------------------------------------------
 *//**
-   \param[in]   out        Output file pointer
-   \param[in]   seq        Sequence to analyze
-   \param[in]   verbose    Verbose output
-   \param[in]   chainType  Type of chain (or unknown)
-   \param[in]   species    "Homo", "Mus" or blank
-   \param[in]   dataDir    Data directory
+   \param[in]   out            Output file pointer
+   \param[in]   seq            Sequence to analyze
+   \param[in]   verbose        Verbose output
+   \param[in]   showAlignment  Show the alignment of each region
+   \param[in]   chainType      Type of chain (or unknown)
+   \param[in]   species        "Homo", "Mus" or blank
+   \param[in]   dataDir        Data directory
 
    Processes a sequence sending output to the specified file
 
    - 31.03.20 Original   By: ACRM
+   - 14.04.20 Added showAlignment
 */
-void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
-                char *species, char *dataDir)
+void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
+                int chainType, char *species, char *dataDir)
 {
    char        lvMatch[MAXBUFF+1],
                hvMatch[MAXBUFF+1],
@@ -185,6 +191,10 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
                lcBestAlign2[HUGEBUFF+1],
                CH1BestAlign1[HUGEBUFF+1],
                CH1BestAlign2[HUGEBUFF+1],
+               CH2BestAlign1[HUGEBUFF+1],
+               CH2BestAlign2[HUGEBUFF+1],
+               CH3BestAlign1[HUGEBUFF+1],
+               CH3BestAlign2[HUGEBUFF+1],
                bestAlign1[HUGEBUFF+1],
                bestAlign2[HUGEBUFF+1];
    REAL        lvScore     = -1.0,
@@ -247,6 +257,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
       if(lvScore > THRESHOLD_LV)
       {
          PrintResult(out, "VL", lvScore, lvMatch);
+         if(showAlignment)
+            PrintAlignment(out, lvBestAlign1, lvBestAlign2);
 
          ljScore = ScanAgainstDB("light_j", seq, verbose, species,
                                  ljMatch, bestAlign1, bestAlign2,
@@ -258,6 +270,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
 #endif
             PrintResult(out, "JL", ljScore, ljMatch);
+            if(showAlignment)
+               PrintAlignment(out, bestAlign1, bestAlign2);
          }
       }
 
@@ -271,6 +285,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
          RemoveSequence(seq, lcBestAlign1, lcBestAlign2, verbose);
 #endif
          PrintResult(out, "CL", lcScore, lcMatch);
+         if(showAlignment)
+            PrintAlignment(out, lcBestAlign1, lcBestAlign2);
       }
       
       break;
@@ -278,19 +294,20 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
    case CHAINTYPE_HEAVY:
       if(CH3CHSScore < 0.0)
          CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species,
-                                     CH3CHSMatch, bestAlign1, bestAlign2,
+                                     CH3CHSMatch,
+                                     CH3BestAlign1, CH3BestAlign2,
                                      dataDir);
 #ifdef REMOVESEQS
       if(CH3CHSScore > THRESHOLD_HC)
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+         RemoveSequence(seq, CH3BestAlign1, CH3BestAlign2, verbose);
 #endif      
       if(CH2Score < 0.0)
          CH2Score = ScanAgainstDB("CH2", seq, verbose, species,
-                                  CH2Match, bestAlign1, bestAlign2,
+                                  CH2Match, CH2BestAlign1, CH2BestAlign2,
                                   dataDir);
 #ifdef REMOVESEQS
       if(CH2Score > THRESHOLD_HC)
-         RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
+         RemoveSequence(seq, CH2BestAlign1, CH2BestAlign2, verbose);
 #endif
       if(CH1Score < 0.0)
          CH1Score = ScanAgainstDB("CH1", seq, verbose, species,
@@ -304,12 +321,15 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
          hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species,
                                   hvMatch, hvBestAlign1, hvBestAlign2,
                                   dataDir);
+
       if(hvScore > THRESHOLD_HV)
       {
 #ifdef REMOVESEQS
          RemoveSequence(seq, hvBestAlign1, hvBestAlign2, verbose);
 #endif
          PrintResult(out, "VH", hvScore, hvMatch);
+         if(showAlignment)
+            PrintAlignment(out, hvBestAlign1, hvBestAlign2);
          
          hjScore = ScanAgainstDB("heavy_j", seq, verbose, species,
                                  hjMatch, bestAlign1, bestAlign2,
@@ -323,14 +343,27 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, int chainType,
          }
       }
 
-
       if(CH1Score > THRESHOLD_HC)
+      {
          PrintResult(out, "CH1", CH1Score, CH1Match);
+         if(showAlignment)
+            PrintAlignment(out, CH1BestAlign1, CH1BestAlign2);
+      }
+      
       if(CH2Score > THRESHOLD_HC)
+      {
          PrintResult(out, "CH2", CH2Score, CH2Match);
+         if(showAlignment)
+            PrintAlignment(out, CH2BestAlign1, CH2BestAlign2);
+      }
+      
       if(CH3CHSScore > THRESHOLD_HC)
+      {
          PrintResult(out, "CH3-CHS", CH3CHSScore, CH3CHSMatch);
-
+         if(showAlignment)
+            PrintAlignment(out, CH3BestAlign1, CH3BestAlign2);
+      }
+      
       break;
       
    default:
@@ -699,18 +732,20 @@ int CalcShortSeqLen(char *align1, char *align2)
    Print usage message.
 
 -  31.03.20 Original    By: ACRM
+-  14.03.20 V1.1 Added -a
 */
 void Usage(void)
 {
-   printf("\nagl V1.0 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.1 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
 
-   printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [file.faa \
-[out.txt]]\n");
+   printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [-a] \
+[file.faa [out.txt]]\n");
    printf("           -H Heavy chain\n");
    printf("           -L Light chain\n");
    printf("           -s Specify a species (Homo or Mus)\n");
    printf("           -d Specify data directory\n");
    printf("           -v Verbose\n");
+   printf("           -a Show alignments\n");
 
    printf("\nagl (Assign Germ Line) is a program for assigning IMGT \
 germlines to\n");
@@ -734,27 +769,28 @@ specified using the\n");
 
 /************************************************************************/
 /*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                     BOOL *verbose, int *chainType, char *species,
-                     char *dataDir)
+                     BOOL *verbose, BOOL *showAlignment, 
+                     int *chainType, char *species, char *dataDir)
    ---------------------------------------------------------------------
 *//**
-   \param[in]   argc        Argument count
-   \param[in]   **argv      Argument array
-   \param[out]  *infile     Input filename (or blank string)
-   \param[out]  *outfile    Output filename (or blank string)
-   \param[out]  *verbose    Verbose
-   \param[out]  *chainType  Chain type
-   \param[out]  *species    Species or blank string
-   \param[out]  *dataDir    Data directory or blank string
-   \return                  Success
+   \param[in]   argc           Argument count
+   \param[in]   **argv         Argument array
+   \param[out]  *infile        Input filename (or blank string)
+   \param[out]  *outfile       Output filename (or blank string)
+   \param[out]  *verbose       Verbose
+   \param[out]  *showAlignment Show the alignments
+   \param[out]  *chainType     Chain type
+   \param[out]  *species       Species or blank string
+   \param[out]  *dataDir       Data directory or blank string
+   \return                     Success
 
    Parse the command line
 
 -  31.03.20 Original    By: ACRM
 */
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
-                  BOOL *verbose, int *chainType, char *species,
-                  char *dataDir)
+                  BOOL *verbose, BOOL *showAlignment, int *chainType,
+                  char *species, char *dataDir)
 {
    argc--;
    argv++;
@@ -770,6 +806,9 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
          {
          case 'v':
             *verbose = TRUE;
+            break;
+         case 'a':
+            *showAlignment = TRUE;
             break;
          case 'L':
          case 'l':
@@ -947,3 +986,62 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match)
    fprintf(out, "%-7s : %6.2f%% : %-12s : %s : %s\n",
            domain, 100.0*score, id, frame, species);
 }
+
+
+/************************************************************************/
+/*>void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
+   --------------------------------------------------------------
+*//**
+   \param[in]   *out       Output file pointer
+   \param[in]   *inAlign1  Aligned sequence 1
+   \param[in]   *inAlign2  Aligned sequence 2
+
+   Displays the aligned region of the two sequences
+
+   14.04.20 Original   By: ACRM
+*/
+void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
+{
+   char align1[HUGEBUFF+1],
+        align2[HUGEBUFF+1],
+        *aln1,
+        *aln2;
+   int  i;
+
+   
+   strncpy(align1, inAlign1, HUGEBUFF);
+   strncpy(align2, inAlign2, HUGEBUFF);
+   aln1=align1+strlen(align1)-1;
+   aln2=align2+strlen(align2)-1;
+   while((*aln1 == '-')||(*aln2 == '-'))
+   {
+      aln1--;
+      aln2--;
+   }
+   *aln1='\0';
+   *aln2='\0';
+
+   aln1=align1;
+   aln2=align2;
+   while((*aln1 == '-')||(*aln2 == '-'))
+   {
+      aln1++;
+      aln2++;
+   }
+
+   fprintf(out, "    %s\n", aln1);
+
+   fprintf(out, "    ");
+   for(i=0; i<strlen(aln1); i++)
+   {
+      if(aln1[i] == aln2[i])
+         fprintf(out, "|");
+      else
+         fprintf(out, " ");
+   }
+   fprintf(out,"\n");
+   
+   fprintf(out, "    %s\n\n", aln2);
+}
+
+      
