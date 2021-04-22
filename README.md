@@ -49,3 +49,9 @@ GGTKFLAPGTPARFSGSLLGGKAALTLSGVQPEDEAEYYCVLWYSNRWVF
 GGGTKLTVL
 gives JL IGLJ3*01 instead of IGLJ2*01 (which is identical)
 
+11881H gives JH IGHJ4*01 instead of IGHJ1*01
+
+11672L gives VL IGLV2-14*02 instead of IGLV2-23*02 (much longer!)
+
+12094L gives JL IGLJ3*01 instead of IGLJ2*01 (which is identical)
+
