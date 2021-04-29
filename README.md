@@ -6,18 +6,33 @@ Assign Germ Line
 
 A germline assignment program for antibody protein sequences
 
+Setup
+-----
+
+The `data` directory contains fasta files containing DNA sequences for
+the germline gene segments.
+
+`makedb.pl` translates these to create files in `mydata`.
+
+The environment variable, `AGLDATADIR` must point to the `mydata`
+directory (or use `-d` on the `agl` command line.
+
 
 Philosophical problems
 ----------------------
+
 There is a philosophical problem with germline assignment.
 
 Take this Homo sapiens VH sequence from 11258
+
+```
 EVQLVESGPGLVKPSETLSLTCTVSGFSLTRFGVHWVRQPPGKGLEWLGV
 IWRGGSTDYNAAFVSRLTISKDNSKNQVSLKLSSVTAADTAVYYCSNHYY
 GSSDYALDNWGQGTLVTVSS
+```
 
-It matches IGHV4-4*08 with 70/97 residues (72.16%) and
-it matches IGHV4-59*03 with 70/96 resideus (72.92%)
+- It matches IGHV4-4*08 with 70/97 residues (72.16%) and
+- it matches IGHV4-59*03 with 70/96 residues (72.92%)
 
 The second one has a higher, yet the first has better coverage (the
 germline sequence covers more residues - the R is missing from the
@@ -38,20 +53,23 @@ change.
 
 Actual Problems
 ---------------
-11351L gives VL IGKV3-11*01 instead of IGKV3D-11*02 (longer but a lot worse)
 
-11366H gives JH IGHJ3*01 instead of IGHJ1*01
+- 11351L gives VL IGKV3-11*01 instead of IGKV3D-11*02 (longer but a lot worse)
 
-11390L gives VL IGLV2-14*01 instead of IGLV2-14*03 (which is longer and better)
+- 11366H gives JH IGHJ3*01 instead of IGHJ1*01
 
+- 11390L gives VL IGLV2-14*01 instead of IGLV2-14*03 (which is longer and better)
+
+```
 QTVVTQEPSLTVSPGGTVTLTCGSSTGAVTSGNYPNWVQQKPGQAPRGLI
 GGTKFLAPGTPARFSGSLLGGKAALTLSGVQPEDEAEYYCVLWYSNRWVF
 GGGTKLTVL
-gives JL IGLJ3*01 instead of IGLJ2*01 (which is identical)
+```
+- gives JL IGLJ3*01 instead of IGLJ2*01 (which is identical)
 
-11881H gives JH IGHJ4*01 instead of IGHJ1*01
+- 12094L gives JL IGLJ3*01 instead of IGLJ2*01 (which is identical)
 
-11672L gives VL IGLV2-14*02 instead of IGLV2-23*02 (much longer!)
+- 11881H gives JH IGHJ4*01 instead of IGHJ1*01
 
-12094L gives JL IGLJ3*01 instead of IGLJ2*01 (which is identical)
+- 11672L gives VL IGLV2-14*02 instead of IGLV2-23*02 (much longer!)
 
