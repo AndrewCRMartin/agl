@@ -73,3 +73,7 @@ GGGTKLTVL
 
 - 11672L gives VL IGLV2-14*02 instead of IGLV2-23*02 (much longer!)
 
+- fails.faa is a heavy chain and fails altogether (seems to have a
+  deletion in HFR3 and a low seqid, but if we tell agl this is human
+  heavy chain it should still report a result)
+  
