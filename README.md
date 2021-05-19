@@ -76,4 +76,5 @@ GGGTKLTVL
 - fails.faa is a heavy chain and fails altogether (seems to have a
   deletion in HFR3 and a low seqid, but if we tell agl this is human
   heavy chain it should still report a result)
-  
+
+- 11878L doesn't find a JL at all (should be Homo sapiens IGKJ5*01)
