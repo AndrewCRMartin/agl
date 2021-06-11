@@ -2,6 +2,16 @@
 
 dest=${HOME}/bin
 
+if [ "X$1" == "X-h" ]; then
+    echo ""
+    echo "Usage: ./install.sh [destination]"
+    echo ""
+    echo "If destination is not provided then software will be installed"
+    echo "in $HOME/bin"
+    echo ""
+    exit 0
+fi
+
 if [ "X$1" != "X" ]; then
     dest=$1
 fi
@@ -24,10 +34,10 @@ fi
 (cd src; make)
 
 echo -n "Building data..."
-./makedb.pl
+(cd util; ./makedb.pl)
 echo "done"
 
 echo -n "Copying files to ${dest}..."
-cp src/agl $dest
+cp agl $dest
 cp -p share/agl/data/* $datadest
 echo "done"

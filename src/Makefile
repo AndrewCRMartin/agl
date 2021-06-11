@@ -1,4 +1,4 @@
-EXE=agl
+EXE=../agl
 OFILES=agl.o findfields.o whereami/whereami.o
 HFILES=agl.h findfields.h whereami/whereami.h
 
