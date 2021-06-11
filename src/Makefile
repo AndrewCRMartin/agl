@@ -1,6 +1,6 @@
 EXE=agl
-OFILES=agl.o findfields.o
-HFILES=agl.h findfields.h
+OFILES=agl.o findfields.o whereami/whereami.o
+HFILES=agl.h findfields.h whereami/whereami.h
 
 LIBS=$(HOME)/lib
 INCLUDE=$(HOME)/include
@@ -15,6 +15,9 @@ agl.o : agl.c $(HFILES)
 	$(CC) -c -o $@ $<
 
 findfields.o : findfields.c $(HFILES)
+	$(CC) -c -o $@ $<
+
+whereami/whereami.o : whereami/whereami.c whereami/whereami.h
 	$(CC) -c -o $@ $<
 
 clean :

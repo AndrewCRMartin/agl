@@ -4,11 +4,11 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.1    
-   \date       31.03.20   
+   \version    V1.2
+   \date       11.06.21
    \brief      Assigns IMGT germline
    
-   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-21
    \author     Prof. Andrew C. R. Martin
    \par
                Institute of Structural & Molecular Biology,
@@ -48,10 +48,14 @@
    =================
    V1.0   31.03.20  Original
    V1.1   14.04.20  Added -a
+   V1.2   11.06.21  Now looks in .../share/agl/data below the location of
+                    the executable before trying $AGLDATA
 
 *************************************************************************/
 /* Includes
 */
+#define USEPATH
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +65,7 @@
 #include "bioplib/macros.h"
 #include "findfields.h"
 #include "agl.h"
+#include "whereami/whereami.h"
 
 /************************************************************************/
 /* Defines and macros
@@ -94,11 +99,10 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match);
 int CalculateDbLen(char *seq);
 int CalcShortSeqLen(char *align1, char *align2);
 void PrintAlignment(FILE *out, char *align1, char *align2);
-
-/************************************************************************/
-
-
-
+#ifdef USEPATH
+char *FindPath(void);
+BOOL DirectoryExists(char *dirName);
+#endif
 
 /************************************************************************/
 /*>int main(int argc, char **argv)
@@ -415,12 +419,40 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
    }
    else
    {
+#ifdef USEPATH
+      char *path;
+      /* Get path to executable                                         */
+      if((path = FindPath())!=NULL)
+      {
+         /* Append the location below the binary directory and see if it
+            exists. If it does then set the filename to include this
+            path. If not, then just save the filename itself
+         */
+         sprintf(filename, "%s/share/agl/data", path);
+         if(DirectoryExists(filename))
+         {
+            sprintf(filename, "%s/share/agl/data/%s.dat", path, type);
+         }
+         else
+         {
+            sprintf(filename, "%s.dat", type);
+         }
+         
+         free(path);
+      }
+      else
+      {
+         sprintf(filename, "%s.dat", type);
+      }
+#else
       sprintf(filename, "%s.dat", type);
+#endif
    }
    
    if(verbose)
       fprintf(stderr,"\n\nChecking %s\n", type);
-   
+
+
    if((dbFp = blOpenFile(filename, AGLDATADIR, "r", &noEnv))!=NULL)
    {
       char header[MAXBUFF+1];
@@ -502,7 +534,8 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
               filename);
       if(noEnv)
       {
-         fprintf(stderr, "   Set the environment variable: %s\n",
+         fprintf(stderr, "   Set the environment variable '%s' to the \
+location of the processed sequence files.\n",
                  AGLDATADIR);
       }
       fprintf(stderr, "\n");
@@ -1009,7 +1042,6 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
         *aln1,
         *aln2;
    int  i;
-
    
    strncpy(align1, inAlign1, HUGEBUFF);
    strncpy(align2, inAlign2, HUGEBUFF);
@@ -1046,4 +1078,43 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
    fprintf(out, "    %s\n\n", aln2);
 }
 
-      
+
+#ifdef USEPATH
+/************************************************************************/
+char *FindPath(void)
+{
+  char *path = NULL;
+  int  length, dirnameLength, i;
+
+  if((length = wai_getExecutablePath(NULL, 0, &dirnameLength)) > 0)
+  {
+     if((path = (char*)malloc(length + 1))==NULL)
+        return(NULL);
+     
+    wai_getExecutablePath(path, length, &dirnameLength);
+    path[dirnameLength] = '\0';
+    return(path);
+  }
+
+  return(NULL);
+}
+
+
+/************************************************************************/
+#include <dirent.h>
+#include <errno.h>
+BOOL DirectoryExists(char *dirName)
+{
+
+   DIR* dir = opendir(dirName);
+   if (dir)
+   {
+      /* Directory exists. */
+      closedir(dir);
+      return(TRUE);
+   }
+
+   return(FALSE);
+}
+#endif
+
