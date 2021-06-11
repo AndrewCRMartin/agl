@@ -73,7 +73,7 @@ use fasta;
              'ggg' => 'G');
 
 my $dataDir = "./data";
-my $outDir  = "./mydata";
+my $outDir  = "./share/agl/data";
 
 `mkdir -p $outDir`;
 
