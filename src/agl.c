@@ -136,6 +136,8 @@ int main(int argc, char **argv)
 
          if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
+            fprintf(out, "%s\n", header);
+            
             ProcessSeq(out, seq, verbose, showAlignment,
                        chainType, species, dataDir);
             free(seq);
@@ -768,10 +770,11 @@ int CalcShortSeqLen(char *align1, char *align2)
 
 -  31.03.20 Original    By: ACRM
 -  14.03.20 V1.1 Added -a
+-  11.06.21 V1.2
 */
 void Usage(void)
 {
-   printf("\nagl V1.1 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.2 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
 
    printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [-a] \
 [file.faa [out.txt]]\n");

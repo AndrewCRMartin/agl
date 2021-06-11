@@ -1,5 +1,9 @@
 #!/usr/bin/perl
+
 use strict;
+# Add the path of the executable to the library path
+use FindBin;
+use lib $FindBin::Bin;
 use lib "./";
 use fasta;
 
@@ -73,7 +77,7 @@ use fasta;
              'ggg' => 'G');
 
 my $dataDir = "./data";
-my $outDir  = "../share/agl/data";
+my $outDir  = "./share/agl/data";
 
 `mkdir -p $outDir`;
 

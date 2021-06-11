@@ -34,7 +34,7 @@ fi
 (cd src; make)
 
 echo -n "Building data..."
-(cd util; ./makedb.pl)
+./util/makedb.pl
 echo "done"
 
 echo -n "Copying files to ${dest}..."
