@@ -24,13 +24,13 @@
 
    This program is not in the public domain, but it may be copied
    according to the conditions laid out in the accompanying file
-   COPYING.DOC
+   LICENSE
 
    The code may be modified as required, but any modifications must be
    documented so that the person responsible can be identified.
 
    The code may not be sold commercially or included as part of a 
-   commercial product except as described in the file COPYING.DOC.
+   commercial product except as described in the file LICENSE.
 
 **************************************************************************
 
