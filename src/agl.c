@@ -799,6 +799,8 @@ the basis\n");
 
    printf("\nIf a data directory is not specified using -d, it will \
 first look in the\n");
+   printf("share/agl/data directory below the location of the \
+executable, then in the\n");
    printf("current directory for files and then in the directory \
 specified using the\n");
    printf("environment variable %s\n\n", AGLDATADIR);
