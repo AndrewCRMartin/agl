@@ -4,8 +4,8 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.2
-   \date       11.06.21
+   \version    V1.3
+   \date       14.06.21
    \brief      Assigns IMGT germline
    
    \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-21
@@ -50,6 +50,7 @@
    V1.1   14.04.20  Added -a
    V1.2   11.06.21  Now looks in .../share/agl/data below the location of
                     the executable before trying $AGLDATA
+   V1.3   14.06.21  Added printing of mismatches with -a
 
 *************************************************************************/
 /* Includes
@@ -401,6 +402,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
    Scans a sequence against the specified database.
 
    - 31.03.20 Original   By: ACRM
+   - 11.06.21 Added USAPATH code
 */
 REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
@@ -774,7 +776,7 @@ int CalcShortSeqLen(char *align1, char *align2)
 */
 void Usage(void)
 {
-   printf("\nagl V1.2 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.3 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
 
    printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [-a] \
 [file.faa [out.txt]]\n");
@@ -783,7 +785,7 @@ void Usage(void)
    printf("           -s Specify a species (Homo or Mus)\n");
    printf("           -d Specify data directory\n");
    printf("           -v Verbose\n");
-   printf("           -a Show alignments\n");
+   printf("           -a Show alignments and number of mismatches\n");
 
    printf("\nagl (Assign Germ Line) is a program for assigning IMGT \
 germlines to\n");
@@ -1039,6 +1041,7 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match)
    Displays the aligned region of the two sequences
 
    14.04.20 Original   By: ACRM
+   14.06.21 Added printing of number of mismatches
 */
 void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
 {
@@ -1046,7 +1049,8 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
         align2[HUGEBUFF+1],
         *aln1,
         *aln2;
-   int  i;
+   int  i,
+        nMismatches = 0;
    
    strncpy(align1, inAlign1, HUGEBUFF);
    strncpy(align2, inAlign2, HUGEBUFF);
@@ -1074,13 +1078,19 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
    for(i=0; i<strlen(aln1); i++)
    {
       if(aln1[i] == aln2[i])
+      {
          fprintf(out, "|");
+      }
       else
+      {
          fprintf(out, " ");
+         nMismatches++;
+      }
    }
    fprintf(out,"\n");
    
-   fprintf(out, "    %s\n\n", aln2);
+   fprintf(out, "    %s\n", aln2);
+   fprintf(out, "    Mismatches: %d\n\n", nMismatches);
 }
 
 
