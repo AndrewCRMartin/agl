@@ -71,6 +71,8 @@ GGGTKLTVL
 
 - 11881H gives JH IGHJ4*01 instead of IGHJ1*01
 
+- 12124H gives JH IGHJ4*01 instead of IGHJ1*01
+
 - 11672L gives VL IGLV2-14*02 instead of IGLV2-23*02 (much longer!)
 
 - fails.faa is a heavy chain and fails altogether (seems to have a
@@ -78,3 +80,17 @@ GGGTKLTVL
   heavy chain it should still report a result)
 
 - 11878L doesn't find a JL at all (should be Homo sapiens IGKJ5*01)
+
+- 12050H gives CH1,CH2 and CH1*01 and IGHG1*01 as IGHG1*07 - they should
+  all be IGHG1*07
+
+- 12011L doesn't assign J - should be IGKJ5*01 (note has deletions)
+
+- 11943H gives JH  IGHJ4*01 instead of IGHJ5*01 (longer)
+
+- 11857L gives the Distal sequence IGKV1D-13*01 rather than the normal
+  one since there is no *01 for IGKV1-13 (i.e. *01 is taking
+  precedence over not using D)
+
+- 12145H gives JH IGHJ4*01 instead of IGHJ1*01 1*01 is the same length
+  and has the same score so should be selected on the basis of lower number
