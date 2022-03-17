@@ -94,3 +94,7 @@ GGGTKLTVL
 
 - 12145H gives JH IGHJ4*01 instead of IGHJ1*01 1*01 is the same length
   and has the same score so should be selected on the basis of lower number
+
+- 21319H[5] gives VH IGHV3-74*01 instead of IGHV3-66*01 (which has an insert
+  in a CDR). Similarly trastuzumab gives the wrong VH because of an insertion
+  
