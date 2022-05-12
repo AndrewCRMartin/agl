@@ -9,7 +9,9 @@ A germline assignment program for antibody protein sequences
 Installation
 ------------
 
-For most people, simply type:
+First you must install `BiopLib` (https://github.com/ACRMGroup/bioplib/).
+
+Then for most people, simply type:
 ```
 ./install.pl
 ```
