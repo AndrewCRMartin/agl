@@ -4,11 +4,11 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.3
-   \date       14.06.21
+   \version    V1.4
+   \date       13.06.22
    \brief      Assigns IMGT germline
    
-   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-21
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-22
    \author     Prof. Andrew C. R. Martin
    \par
                Institute of Structural & Molecular Biology,
@@ -51,6 +51,7 @@
    V1.2   11.06.21  Now looks in .../share/agl/data below the location of
                     the executable before trying $AGLDATA
    V1.3   14.06.21  Added printing of mismatches with -a
+   V1.4   13.06.22  Now uses a window in the alignment
 
 *************************************************************************/
 /* Includes
@@ -702,6 +703,7 @@ void GetDomainID(char *header, char *id, int maxbuff)
    \return               Score for alignment
 
    - 31.03.20 Original   By: ACRM
+   - 13.06.22 Changed to use a window in the alignment to speed it up
 */
 REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
 {
@@ -709,14 +711,16 @@ REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
    int  alignLen;
    int  shortSeqLen = MIN(strlen(theSeq), strlen(seq));
    
-   score = blAlign(theSeq, strlen(theSeq),
-                   seq, strlen(seq),
-                   FALSE, /* verbose  */
-                   TRUE,  /* identity */
-                   5,     /* penalty  */
-                   align1,
-                   align2,
-                   &alignLen);
+   score = blAffinealignWindow(theSeq, strlen(theSeq),
+                               seq, strlen(seq),
+                               FALSE, /* verbose            */
+                               TRUE,  /* identity           */
+                               5,     /* opening penalty    */
+                               5,     /* extension penalty  */
+                               10,    /* window             */
+                               align1,
+                               align2,
+                               &alignLen);
    align1[alignLen] = align2[alignLen] = '\0';
 
    shortSeqLen = CalcShortSeqLen(align1, align2);

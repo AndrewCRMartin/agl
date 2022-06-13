@@ -93,6 +93,13 @@ GGGTKLTVL
 
 - 11878L doesn't find a JL at all (should be *Homo sapiens* IGKJ5\*01)
 
+- 12056H gives IGHJ4*01 rather than IGHJ6*01 though the latter is
+  longer with the same number of mismatches
+
+- 11938H (trastuzumab) gives IGHV3-66*01 rather than IGHV3-23*04 The
+  latter scores better but has an indel. On the other hand 12079H does
+  give IGHV3023*04 (but BLAST gives IGHV3-66*01)
+
 - 12050H gives CH1,CH2 and CH1\*01 and IGHG1\*01 as IGHG1\*07 - they should
   all be IGHG1\*07
 
@@ -122,5 +129,17 @@ the germline gene segments and `makedb.pl` translates these to create
 files in the AGL data directory.
 
 Note that commercial use of the DNA data requires a licence from IMGT.
+
+
+Setup
+-----
+
+The `data` directory contains fasta files containing DNA sequences for
+the germline gene segments.
+
+`makedb.pl` translates these to create files in `mydata`.
+
+The environment variable, `AGLDATADIR` must point to the `mydata`
+directory (or use `-d` on the `agl` command line.
 
 
