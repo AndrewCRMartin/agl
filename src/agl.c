@@ -93,7 +93,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
                    char *dataDir);
-REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2);
+REAL CompareSeqs(char *theSeq, char *seq, int window,
+                 char *align1, char *align2);
 BOOL PreferHeader(char *newHeader, char *oldHeader);
 void GetDomainID(char *header, char *id, int maxbuff);
 void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose);
@@ -403,7 +404,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
    Scans a sequence against the specified database.
 
    - 31.03.20 Original   By: ACRM
-   - 11.06.21 Added USAPATH code
+   - 11.06.21 Added USEPATH code
+   - 13.06.22 Added window size of 2 for C regions and 10 for others
 */
 REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
@@ -457,7 +459,6 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
    if(verbose)
       fprintf(stderr,"\n\nChecking %s\n", type);
 
-
    if((dbFp = blOpenFile(filename, AGLDATADIR, "r", &noEnv))!=NULL)
    {
       char header[MAXBUFF+1];
@@ -470,8 +471,15 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
          {
             REAL score;
             int  dbLen;
-         
-            score = CompareSeqs(theSeq, seq, align1, align2);
+            int  window = 10;
+
+            /* Use a window of 10 by default, or a window of 2 for 
+               constant regions
+            */
+            if(strncmp(header, ">C", 2))
+               window = 2;
+            
+            score = CompareSeqs(theSeq, seq, window, align1, align2);
             dbLen = CalculateDbLen(align2);
             
 #ifdef DEBUG
@@ -693,19 +701,23 @@ void GetDomainID(char *header, char *id, int maxbuff)
 
 
 /************************************************************************/
-/*>REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
+/*>REAL CompareSeqs(char *theSeq, char *seq, int window, 
+                    char *align1, char *align2)
    ---------------------------------------------------------------------
 *//**
    \param[in]   theSeq   the sequence of interest
    \param[in]   seq      the database sequence
+   \param[in]   window   Window size
    \param[out]  align1   Alignment of our sequence
    \param[out]  align2   Alignment of database sequence
    \return               Score for alignment
 
    - 31.03.20 Original   By: ACRM
    - 13.06.22 Changed to use a window in the alignment to speed it up
+              Added window size as a parameter
 */
-REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
+REAL CompareSeqs(char *theSeq, char *seq, int window,
+                 char *align1, char *align2)
 {
    int  score;
    int  alignLen;
@@ -713,11 +725,11 @@ REAL CompareSeqs(char *theSeq, char *seq, char *align1, char *align2)
    
    score = blAffinealignWindow(theSeq, strlen(theSeq),
                                seq, strlen(seq),
-                               FALSE, /* verbose            */
-                               TRUE,  /* identity           */
-                               5,     /* opening penalty    */
-                               5,     /* extension penalty  */
-                               10,    /* window             */
+                               FALSE,  /* verbose            */
+                               TRUE,   /* identity           */
+                               5,      /* opening penalty    */
+                               5,      /* extension penalty  */
+                               window, /* window             */
                                align1,
                                align2,
                                &alignLen);
@@ -777,10 +789,11 @@ int CalcShortSeqLen(char *align1, char *align2)
 -  31.03.20 Original    By: ACRM
 -  14.03.20 V1.1 Added -a
 -  11.06.21 V1.2
+-  13.06.22 V1.4
 */
 void Usage(void)
 {
-   printf("\nagl V1.3 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.4 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
 
    printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [-a] \
 [file.faa [out.txt]]\n");
@@ -929,7 +942,7 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
 {
    int         i, j,
                start, stop,
-               alnLen = MAX(strlen(align1), strlen(align2));;
+               alnLen = MAX(strlen(align1), strlen(align2));
    static char buffer[HUGEBUFF+1];
 
    if(verbose)
@@ -1103,7 +1116,7 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
 char *FindPath(void)
 {
   char *path = NULL;
-  int  length, dirnameLength, i;
+  int  length, dirnameLength;
 
   if((length = wai_getExecutablePath(NULL, 0, &dirnameLength)) > 0)
   {
