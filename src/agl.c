@@ -140,11 +140,16 @@ int main(int argc, char **argv)
          if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
             fprintf(out, "%s\n", header);
-            
+
             ProcessSeq(out, seq, verbose, showAlignment,
                        chainType, species, dataDir);
             free(seq);
          }
+         else
+         {
+            fprintf(stderr, "No sequence found for %s\n", header);
+         }
+         
          if(in  != stdin)  fclose(in);
          if(out != stdout) fclose(out);
       }
