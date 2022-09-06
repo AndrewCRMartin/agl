@@ -134,6 +134,9 @@ GGGTKLTVL
   more highly. I'm guessing that it is actually longer. I think we need to
   trim tails from the sequences before calculating the score.
 
+- 12545H gives mouse VH IGHV1-53*01 instead of IGHV1S81*02 which is one
+  mutation better
+
 Data
 ----
 
