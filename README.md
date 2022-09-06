@@ -117,9 +117,9 @@ GGGTKLTVL
 - 21319H[5] gives VH IGHV3-74\*01 instead of IGHV3-66\*01 (which has an insert
   in a CDR). Similarly trastuzumab gives the wrong VH because of an insertion
 
-- 12528H gives JH IGHJ4*01 instead of IGHJ2*01 which is the same length and
-  had better seqid IGHJ4*01: 12/14 IGHJ2*01: 13/14
-  This is because the translation for IGHJ2*01 is 2 residues longer at the
+- 12528H gives JH IGHJ4\*01 instead of IGHJ2\*01 which is the same length and
+  had better seqid IGHJ4\*01: 12/14 IGHJ2*01: 13/14
+  This is because the translation for IGHJ2\*01 is 2 residues longer at the
   N-terminus
 ```  
   >J-REGION_IGHJ2*01_F1_Homo sapiens
@@ -128,6 +128,11 @@ GGGTKLTVL
   >J-REGION_IGHJ4*01_F2_Homo sapiens
     YFDYWGQGTLVTVSS
 ```
+
+- 12552H gives JH IGHJ4\*01 instead of IGHJ1\*01. Looking at the alignment
+  they seem to have the same number of mismatches, but 4\*01 scores
+  more highly. I'm guessing that it is actually longer. I think we need to
+  trim tails from the sequences before calculating the score.
 
 Data
 ----
