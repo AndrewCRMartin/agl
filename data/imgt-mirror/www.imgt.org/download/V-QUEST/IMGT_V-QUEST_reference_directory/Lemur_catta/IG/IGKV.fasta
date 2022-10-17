@@ -1,0 +1,175 @@
+>IMGT000098|IGKV1-15*01|Lemur catta_mLemCat1|P|V-REGION|18174..18458|285 nt|1| | | | |285+48=333| | |
+gacatccagatgacccagtctccatcctccctgtctgcatctgtaggagacacagttacc
+atcacttgctgggccagtcagagcatt..................agcagttggttaacc
+tggtatcagcagaaacctgggaaaccccctaagactctggtcaataaggca.........
+............tctaatttggaatctggggtccca...tcgaggttcagtggcagtggg
+......tctgggacagatttcactctcaccatcagcagcctccaggctgaagattttgca
+acttactactgtctaatatgataattaccctca
+>IMGT000098|IGKV2-10*01|Lemur catta_mLemCat1|F|V-REGION|50594..50895|302 nt|1| | | | |302+33=335| | |
+gatactgtgatgacccagactccactgaccctgtctgtcacccctggagagtcagcctcc
+atctcctgcaaggctagtcagagcctcctgaatacc...aatggaaatacctatttgcat
+tggttactgcagaagccaggccaacctccaaggcgcctgatttatcaggtt.........
+............tccaaccgggactctggggttcca...gacaggtttagtggcagtggg
+......tcagggacagatttcacactgaaaatcagcagggtggaggctgaggatattgga
+gtgtattactgcatgcaagctacacattctcctta
+>IMGT000101|IGKV2-10*02|Lemur catta_mLemCat1|F|V-REGION|54954..55255|302 nt|1| | | | |302+33=335| | |
+gatactgtgatgacccagactccactgtccctgtctgtcacccccggagagttggcctcc
+atctcctgcaaggctagtcagagcctcctgcatacc...gatggaaagacctatttgtat
+tggttcctgcagaagccaggccaacctccaaggctcctgatttatcaggtt.........
+............tccaaccggcactctggggtctca...gacaggtttagtggcagtggg
+......tcagggacagatttcacactgaaaatcagcagggtggagtctgaggatattgga
+gtgtattactgcatgcaagctacatattctcctta
+>IMGT000120|IGKV2-10*03|Lemur catta_BS26|F|V-REGION|6624..6925|302 nt|1| | | | |302+33=335| | |
+gatactgtgatgacccagactccactgtccctgtctgtcacccccggagagtcggcctcc
+atctcctgcaaggctagtcagagcctcctgcatacc...gatggaaagacctatttgtat
+tggttcctgcagaagccaggccaacctccaaggctcctgatttatcaggtt.........
+............tccaaccggcactctggggtctca...gacaggtttagtggcagtggg
+......tcagggacagatttcacactgaaaatcagcagggtggagtctgaggatattgga
+gtgtattactgcatgcaagctacatattctcctta
+>IMGT000098|IGKV2-12*01|Lemur catta_mLemCat1|F|V-REGION|40314..40615|302 nt|1| | | | |302+33=335| | |
+gatactgtgatgacccagactccactgtccctgtctgtcaccctcggagagtcggcctcc
+atctcctgcaaggctagtcagagcctcctgcatacc...aatggaaatacctatttgcat
+tggttactgcagaagccaggccaacctccaaggcgcctgatttatcaggtt.........
+............tccaaccgggactctggggttcca...gacaggtttagtggcagtggg
+......tcagggacagatttcacactgaaaatcagcagggtggaggctgaggatgttgga
+gtgtattactgcttgcaaaatttatatattcctcg
+>IMGT000101|IGKV2-12*02|Lemur catta_mLemCat1|F|V-REGION|44666..44967|302 nt|1| | | | |302+33=335| | |
+gatactgtgatgacccagactccactgtccctgtctgtcacccccggagagtcggcctcc
+atctcctgcaaggctagtcagagcctcctgcatacc...gatggaaagacctatttgtat
+tggttcctgcagaagccaggccaacctccaaggctcctgatttatcaggtt.........
+............tccaaccgggactctggggttcca...gacaggtttagtggcagtggg
+......tcagggacagatttcacactgaaaatcagcagggtggaggctgaggatgttgga
+gtgtattactgcatgcaaaatttatatattcctcg
+>IMGT000098|IGKV2-13*01|Lemur catta_mLemCat1|F|V-REGION|35276..35577|302 nt|1| | | | |302+33=335| | |
+gatattgcgatgacccagactccactgtccctgtctgtcacccctggagagtcggcctcc
+atctcctgcaaggctagtcagagcctcctgcatacc...gatggaaagacctatttgcat
+tggttcctgcagaagccaggccaacctccaaggcgcctgatttatcaggtt.........
+............tccaaccgggactctggggttcca...gacaggtttagtggcagtggg
+......tcagggacagatttcacactgaaaatcagcagggtggaggctgaggatgttgga
+gtgtattactgcatgcaagctatacaatatcctcc
+>IMGT000101|IGKV2-13*02|Lemur catta_mLemCat1|F|V-REGION|39628..39929|302 nt|1| | | | |302+33=335| | |
+gatattgcgatgacccagactccactgaccctgtctgtcacccctggagagtcggcctcc
+atctcctgcaaggctagtcagagcctcctgcatacc...gatggaaagacctatttgtat
+tggttcctgcagaagccaggccaacctccaaggcgcctgatttatcaggtt.........
+............tccaaccgggactctggggttcca...gacaggtttagtggcagtggg
+......tcagggacagatttcacactgaaaatcagcagggtggaggctgaggatgttgga
+gtgtattactgcatgcaagctatacaatatcctcc
+>IMGT000098|IGKV2-14*01|Lemur catta_mLemCat1|F|V-REGION|25843..26144|302 nt|1| | | | |302+33=335| | |
+gagattgtgatgacccagactccactctccctgccggtcacccctggagaaccagcctcc
+atctcctgcaggtctagccagagcctcctgcatagc...aatggaaacacctatttgcaa
+tggtacctgaagaagccgggccagcctccacagctcctgatctatttggtt.........
+............tccaaccggttctctggagtccca...gacaggttcagtggcagcggg
+......tcagggacagactttacactcaagattagcaaggtggaggctgaggatgttggg
+gtttattactgcatgcaagctctacaacttcctcc
+>IMGT000101|IGKV2-14*02|Lemur catta_mLemCat1|F|V-REGION|30198..30499|302 nt|1| | | | |302+33=335| | |
+gagattgtgatgacccagactccactctccctgccagtcacccctggagaaccagcctcc
+atctcctgcaggtctagccagagcctcctgcatagc...aatggaaacacctatttgcaa
+tggtacctgaagaagccgggccagcctccacggctcctgatctatttggtt.........
+............tccaaccggttctctggggtccca...gacaggttcagtggcagcggg
+......tcagggacagactttacactcaagattagcaaggtggaggctgaggatgttggg
+gtttattactgcatgcaagctctacaacttcctcc
+>IMGT000118|IGKV2-14*03|Lemur catta_BS26|F|V-REGION|220954..221255|302 nt|1| | | | |302+33=335| | |
+gagattgtgatgacccagactccactctccctgccagtcacccctggagaaccagcctcc
+atctcctgcaggtctagccagagcctcctgcatagc...aatggaaacacctatttgcaa
+tggtacctgaagaagccgggccagcctccacagctcctgatctatttggtt.........
+............tccaaccggttctctggggttcca...gacaggttcagtggcagcggg
+......tcagggacagactttacactcaagattagcaaggtggaggctgaggatgttggg
+gtttattactgcatgcaagctctacaacttcctcc
+>IMGT000098|IGKV2-6*01|Lemur catta_mLemCat1|F|V-REGION|71176..71477|302 nt|1| | | | |302+33=335| | |
+gagattgtgatgacccagactccactctccctgccggtcacccctggggagccggcatcc
+atctcctgcaggtctagtcagagcctcctgcatacc...gatggaaagacctatttgaat
+tggtacctgcagaagccagggcagtctccacagctcctgatctatttggtt.........
+............tccaaccggttctctggggtccca...gataggttcattggcagtggg
+......tcagggacagatttcacgctgaaaatcagcagggtggaggctgaggatgttggg
+gtttattactgcatgcaagatctacaacttcctcc
+>IMGT000101|IGKV2-6*02|Lemur catta_mLemCat1|F|V-REGION|75546..75847|302 nt|1| | | | |302+33=335| | |
+gagattgtgatgacccagactccactctccctgccggtcacccctggggagccggcctcc
+atctcctgcaggtctagtcagagcctcctgcatacc...gatggaaacacctatttgaat
+tggtacctgcagaagccaggccagtctccacagctcctgatctatttggtt.........
+............tccaaccggttctctggggtcgca...gataggttcattggcagtggg
+......tcagggacagatttcacgctgaaaatcagcagggtggaggctgaggatgttggg
+gtttattactgcatgcaagatctacaacttcctcc
+>IMGT000119|IGKV2-6*03|Lemur catta_BS26|F|V-REGION|4526..4827|302 nt|1| | | | |302+33=335| | |
+gagattgtgatgacccagactccactctccctgccggtcacccctggagagtcggcctcc
+atctcctgcaggtctagtcagagcctcctgcatacc...gatggaaagacctatttgaat
+tggtacctgcagaagccagggcagtctccacagctcctgatctatttggtt.........
+............tccaaccggttctctggggtccca...gataggttcattggcagtggg
+......tcagggacagatttcacgctgaaaatcagcagggtggaggctgaggatgttggg
+gtttattactgcatgcaagatctacaacttcctcc
+>IMGT000098|IGKV3-16*01|Lemur catta_mLemCat1|P|V-REGION|9985..10271|287 nt|1| | | | |287+48=335| | |
+gaagttgcgagcatgcggtctccagcctccctgcctttgtctcctcatgaaagatacacc
+ctcacctgcagggccagtcagagtgtt..................ggcagctccttagcc
+tggtgccagcagaaacctgggcaggctcccagaatcctcatctggggagca.........
+............tccaccagggcccccggcatccca...cctcagttcaggggcagtggg
+......tctgggacagactctgctctcatcaccagcagcccgaagcctggagatcttgct
+ctttgtcactgttgccagcctgggagtgggcatcc
+>IMGT000101|IGKV3-16*02|Lemur catta_mLemCat1|P|V-REGION|14331..14617|287 nt|1| | | | |287+48=335| | |
+gaagttgcgagcatgcggtctccagcctccctgcctttgtctcctcatgaaagatacacc
+cttacctgcagggccagtcagagtgtt..................ggcagctccttagcc
+tggtgccagcagaaacctgggcaggctcccagaatcctcatctggggagca.........
+............tccatcagggcccccggcatccca...cctcagttcaggggcagtggg
+......tctgggacagactctgctctcaccaccagcagcccgaagcctggagatcttgct
+ctttgtcactgttgccagcctgggagtgggcatcc
+>IMGT000098|IGKV4-1*01|Lemur catta_mLemCat1|F|V-REGION|102240..102538|299 nt|1| | | | |299+36=335| | |
+gacattgtgatgacccagtccctgaggtccctggttgtatctgcaggagagaaggtcacc
+atcaactgcaagtccagccagagtcttttatcc......aacaataagaactacttagcc
+tggcaccagcagaaaccaggacaggctcctaagatgctcatctcctgggca.........
+............tccacccgggcatctggggtcccc...gaccgattcagtggcagtggg
+......tctgggacagacttcactctcaccatcagcggcatacgggctgaagatgtggct
+gtttattactgccagcagtatcatagtgctcctcc
+>IMGT000101|IGKV4-1*02|Lemur catta_mLemCat1|F|V-REGION|106648..106946|299 nt|1| | | | |299+36=335| | |
+gacattgtgatgacccagtccctgaggtccctggttgtatctgcaggagagaaggtcacc
+atcaactgcaagtccagccagagtcttttatcc......aacaataagaactacttagcc
+tggcaccagcagaaaccaggacaggctcctaagatgctcatctcctgggca.........
+............tccacccgggcatctggggtcccc...gaccgattcagtggcagtggg
+......tctgggacagacttcactctcaccatcagcagcatacgggctgaagatgtggct
+gtttattactgccagcagtatcatagtgctcctcc
+>IMGT000098|IGKV4-5*01|Lemur catta_mLemCat1|F|V-REGION|76775..77079|305 nt|1| | | | |305+30=335| | |
+gacattgtgatgactcagtctcctggttccctggctgcggctgcaggagagagggtctcc
+atcaactgcaagtccagccagagtgttttgtacagctccaacaataaaaactacttaacc
+tggtaccagcagaaaccaggacaggcacctaaactgctcatctaccaggca.........
+............tccacccgggcatctggggtccct...gaccggttcagtggcagtggg
+......tctgggacagacttcactctcaccatcagcagcctccaggctgaagatgtggca
+gtttactactgtgggcagagttataacactcctcc
+>IMGT000101|IGKV4-5*02|Lemur catta_mLemCat1|F|V-REGION|81144..81442|299 nt|1| | | | |299+36=335| | |
+gacattgtgatgactcagtctcctggttccctggctgcggctgcaggagagagggtctcc
+atcaactgcaagtccagccagagtcttttatcc......aacaacaaaaactacttaggc
+tggtaccagcagaaaccaggacaggcacctaaactgctcatctaccaggca.........
+............tccacccgggcatctggggtccct...gaccggttcagtggcagtggg
+......tctgggacagacttcactctcaccatcagcagcctccaggctgaagatgtggca
+gtttactactgtgggcagagttataacactcctcc
+>IMGT000098|IGKV5-2*01|Lemur catta_mLemCat1|F|V-REGION|95359..95643|285 nt|1| | | | |285+48=333| | |
+gaaacaacactcacacagactccagcattagtatcagtggctccaggagacaaagtcact
+attacttgcaaagccagccaagacatt..................gatgatgatattcac
+tggtatcagcagaaaccaggagcatctcctaaattcattattaaatatgct.........
+............tctactctcgtttctggagtccca...tctcggttcagtggcagcgga
+......tatggaacagattttgccctgacaattaataatctggaatctgaggatgctgca
+tattatttctgtcaacaagacgataatttgcct
+>IMGT000098|IGKV6-8*01|Lemur catta_mLemCat1|F|V-REGION|58416..58693|278 nt|1| | | | |278+57=335| | |
+cagatagtgctgacccagtctccagccttcctgtctgggactccaggggagaaagccacc
+ctcacctgccgggccagtcagggcatt..................ggcagctacttacac
+tggtaccagcagaaaccaggtcaggctccaaagctcctcgtaaagcatgcc.........
+............tcccagtcc.........gtgtcc...tcggggttcagtggcagtgga
+......tctgggacagatttcaccctcaccatcagtagcctgaaagctgaagatgctgca
+acttattactgtcagcagagcaatgcttatcctcc
+>IMGT000101|IGKV6-8*02|Lemur catta_mLemCat1|F|V-REGION|62770..63047|278 nt|1| | | | |278+57=335| | |
+cagatagtgctgacccagtctccagccttcctgtctgggactccaggggagaaagccacc
+ctcacctgccgggccagtcagagcatt..................ggcagctacttacac
+tggtaccagcagaaaccaggtcaggctccaaagctcctcgtaaagtatgcc.........
+............tcccagtcc.........gtgtcc...tcggggttcagtggcagtgga
+......tctgggacagatttcaccctcaccatcagtagcctgaaagctgaagatgctgca
+acttattactgtcagcagagcaatgcttatcctcc
+>IMGT000098|IGKV8-3*01|Lemur catta_mLemCat1|F|V-REGION|92451..92737|287 nt|1| | | | |287+48=335| | |
+aacgctgtgctgactcagtttccagacttcctctcggcatctctgagagacagtgtctcc
+atcaattgcaaggccaatcagagcatc..................agtgattatctaagc
+tggtatcagcagaaaccaggccagcctcctaagcttctcatctatgatgct.........
+............gataacctatacaccggcgtctca...tctcggtttgctgggctgcag
+......tctgggacagattttgttctcacaatcagaaatgtagaggctgacgatgctgcc
+acttattactgccagcaggactacacagtccctcc
+>IMGT000098|IGKV9-17*01|Lemur catta_mLemCat1|F|V-REGION|5369..5655|287 nt|1| | | | |287+48=335| | |
+cagatcatcctgactcagtctccagagaccctggaagcatctcaaggtgactttgtctcc
+atcacctgtagaagcagcatggatgta..................ggtacctccatggcc
+tggtaccaacagagacccctggaggctcccaggctgctcctctttggggct.........
+............tctgccagggctgctggaacccct...tccaggttccggggaagtggc
+......tctggctttgacttctccctcgccatccacggggtggaagctgaagacgtcggg
+gtgttttactgccagcagcacttcacccagcctct

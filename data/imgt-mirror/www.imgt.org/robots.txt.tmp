@@ -1,0 +1,21 @@
+# IMGT (www.imgt.org) rules for The Robots Exclusion Protocol
+# $Revision: 1.9 $
+
+User-agent: *
+Disallow: /IMGTrepertoire/Proteins/alleles/index.php
+Allow: /ligmdb/documentation
+Disallow: /ligmdb/
+Allow: /genedb/doc
+Disallow: /genedb/
+Allow: /3Dstructure-DB/doc/
+Disallow: /3Dstructure-DB/
+Disallow: /HighV-QUEST/
+Disallow: /CLLDBInterface/
+Allow: /IMGT_vquest/user_guide
+Disallow: /IMGT_vquest/
+Allow: /IMGT_jcta/user_guide
+Disallow: /IMGT_jcta/
+Allow: /mAb-DB/doc
+Disallow: /mAb-DB/
+Allow: /genefrequency/doc
+Disallow: /genefrequency/

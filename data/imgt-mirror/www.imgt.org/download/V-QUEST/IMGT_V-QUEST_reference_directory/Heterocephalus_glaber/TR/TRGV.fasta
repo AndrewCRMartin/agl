@@ -1,0 +1,49 @@
+>IMGT000072|TRGV1-1*01|Heterocephalus glaber_MEF-2018|F|V-REGION|10266..10561|296 nt|1| | | | |296+30=326| | |
+tcttctggtttggaaggaggaatgatatcaatcagcaggaagcgtgggtcatatatagtc
+atcacttgtgatattcatgaggaaggg.....................aactacatccac
+tggtacctgttcagggtgggccaggccccacaccgtcttctctactatgactttttt...
+...gcttccaagccagtggtggattctgaattcagcccagggaaataccatgcttatgaa
+ggc...acaaaaaagagctataagtttgtactacgaaatgtggaagaaagcgattctggc
+gtgtattactgtgcaatctgggcagg
+>IMGT000072|TRGV1-3*01|Heterocephalus glaber_MEF-2018|P|V-REGION|187128..187423|296 nt|1| | | | |296+30=326| | |
+tcttccaacatggaatggaaagtgatctcaatcaccaagaaacctgggtcacatctgact
+atcagttgtggactgagtgcaggaagg.....................agctacatccac
+tggtaccaattttgagaggggcaaatcccacaacgccttctctactatgactcctcc...
+...cagtccaaagctgtgttggattcagaactcagatcggggaaatacaatgcttaccaa
+gtc...aatgagcagagcaataaatttgtagtatggaatgtggaagaaagtgattctggt
+gtgtactactgtgcagtctgggctgg
+>IMGT000083|TRGV1-3*02|Heterocephalus glaber_NMR 29|P|V-REGION|221782..222077|296 nt|1| | | | |296+30=326| | |
+tcttccaacatggaatggaaagtgatctcagtcaccaagaaacctgggtcacatttgact
+atcagttgtggactgagtgcaggaagg.....................agctacatccac
+tggtaccaattttgagaggggcaaatcccacaacgccttctctactatgactcctcc...
+...cagtccaaagctgtgttggattcagaactcagatcggggaaatacaatgcttaccaa
+gtc...aatgagcagagcaataaatttgtagtatggaatgtggaagaaagtgattctggt
+gtgtactactgtgcagtctgggctgg
+>IMGT000072|TRGV3-1*01|Heterocephalus glaber_MEF-2018|ORF|V-REGION|31722..32016|295 nt|1| | || |295+30=325| | |
+gtgacaaagatggagcagtcccagatatccatttccattgaagaaaataaacgggttgac
+ataccttgcaaggtatcaggtgactatttt............gaagatgaagccattcac
+tggtacctgcagaaacaggatcaggctttggagcatctgattcaagtagtctcaaca...
+...acaaccccagctcaa............gaaaaaatcaatagagtttcggcaacaaaa
+gatcttgcaactcgctcctcagtccttactataaaatttgtagcaaaagaagatgtgggc
+ctttactactgtgcaatgtgggact
+>IMGT000072|TRGV3-2*01|Heterocephalus glaber_MEF-2018|ORF|V-REGION|151562..151856|295 nt|1| | || |295+30=325| | |
+gtgacaaaactggagcagttccagatatctgtttccacggaagtaaagaaaagtgttaac
+atacattgcagggtatggagcacccagttt............gaaactaaacccattcac
+tggtacctgcagaaagcaaatcaagctttggtgcatctgattcaagtaacctcacta...
+...acaaccccagctcga............gcaaagaacaacagagtttcagcaagaaaa
+gatcctgtaactctctcctcaactcttactataaatttcgtagaaaaagaagatatggcc
+atttactactgtgctgggtgggatg
+>IMGT000072|TRGV4-2*01|Heterocephalus glaber_MEF-2018|ORF|V-REGION|286413..286715|303 nt|1| | | | |303+24=327| | |
+ctggggcaattggagcaacctaaaatagtcatttccagagcaacagataagagtgccagc
+ataccttgtaaggcaaccaccaacaacttt............aaaagtgtagatatacac
+tggtaccgacaaaaaccaaaaaaagagtttgagcatctaatgtatgtccggaca......
+......gcctacaatcaacgtcccttaggaggaacaaacaagaagctcgaggcaagtaaa
+aattttgacacttttgcatcaaccttaaaaataaatgtcttaaagaaagaagatgaggcc
+acatattattgcacctactgggactcg
+>IMGT000072|TRGVC*01|Heterocephalus glaber_MEF-2018|P|V-REGION|45613..45904|292 nt|1| | || |292+33=325| | |
+gaagttatagtatctcaggaccagctctcctttacctgaagaccaggcaagatggtgcac
+ataagttgcaagttctctggggtcctcctc............cagaatgtcactgtgcac
+tggtgtcaactgaaagaagcagaggccctgaaaaggatcctttatggctca.........
+.........gccaagaattacaagcaagaccaacccgactgctgtgtggaggctgatgag
+aaa...gataatggtgtgttttacctgatcatcaataatgttgtcccctctgatgaagac
+ccatactatggtgcctgctgggatc

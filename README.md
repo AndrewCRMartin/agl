@@ -135,7 +135,10 @@ GGGTKLTVL
   trim tails from the sequences before calculating the score.
 
 - 12545H gives mouse VH IGHV1-53*01 instead of IGHV1S81*02 which is one
-  mutation better
+  mutation better.
+
+- 12421H gives JH IGHJ3\*01 instead of IGHJ6*01. The latter is longer
+  and has the same number of mismatches.
 
 Data
 ----
