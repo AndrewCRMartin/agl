@@ -136,16 +136,20 @@ int main(int argc, char **argv)
       {
          char header[MAXBUFF+1];
          char *seq = NULL;
+         BOOL ok = FALSE;
+         
 
-         if((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
+         while((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
          {
+            ok = TRUE;
             fprintf(out, "%s\n", header);
 
             ProcessSeq(out, seq, verbose, showAlignment,
                        chainType, species, dataDir);
             free(seq);
          }
-         else
+
+         if(!ok)
          {
             fprintf(stderr, "No sequence found for %s\n", header);
          }

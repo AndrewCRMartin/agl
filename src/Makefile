@@ -4,9 +4,9 @@ HFILES=agl.h findfields.h whereami/whereami.h
 
 LIBS=$(HOME)/lib
 INCLUDE=$(HOME)/include
-#CFLAGS=-g
+CFLAGS=-g
 #CC=cc $(CFLAGS) -L$(LIBS) -I$(INCLUDE) -fsanitize=address
-CFLAGS=-O3
+#CFLAGS=-O3
 CC=cc $(CFLAGS) -L$(LIBS) -I$(INCLUDE)
 
 $(EXE) : $(OFILES)
