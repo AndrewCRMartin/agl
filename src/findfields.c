@@ -4,11 +4,11 @@
    Program:    agl (Assign Germ Line)
    \file       findfields.c
    
-   \version    V1.0    
-   \date       31.03.20   
+   \version    V1.5
+   \date       14.11.22
    \brief      Parse IMGT identifier into fields
    
-   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2022
    \author     Prof. Andrew C. R. Martin
    \par
                Institute of Structural & Molecular Biology,
@@ -47,6 +47,7 @@
    Revision History:
    =================
    V1.0   31.03.20  Original
+   V1.5   14.11.22  Frees regex buffer if there were no matches
 
 *************************************************************************/
 /* Includes
@@ -322,7 +323,7 @@ void FindFields(char *id, char *class, char *subclass, char *family,
                 int *pAllele, char *distal)
 {
    regex_t    re;
-   regmatch_t matches[16];
+   regmatch_t matches[LABELBUFF];
    int        err;
 
    class[0]    = '\0';
@@ -621,4 +622,5 @@ void FindFields(char *id, char *class, char *subclass, char *family,
       regfree(&re);
       return;
    }
+   regfree(&re);
 }

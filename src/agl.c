@@ -4,8 +4,8 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.4
-   \date       13.06.22
+   \version    V1.5
+   \date       14.11.22
    \brief      Assigns IMGT germline
    
    \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-22
@@ -52,6 +52,7 @@
                     the executable before trying $AGLDATA
    V1.3   14.06.21  Added printing of mismatches with -a
    V1.4   13.06.22  Now uses a window in the alignment
+   V1.5   14.11.22  Now supports FASTA input with multiple sequences
 
 *************************************************************************/
 /* Includes
@@ -137,9 +138,10 @@ int main(int argc, char **argv)
          char header[MAXBUFF+1];
          char *seq = NULL;
          BOOL ok = FALSE;
-         
+         static char fastaBuffer[MAXBUFF+1];
 
-         while((seq = blReadFASTA(in, header, MAXBUFF))!=NULL)
+         while((seq = blReadFASTAExtBuffer(in, header, MAXBUFF,
+                                           fastaBuffer, MAXBUFF))!=NULL)
          {
             ok = TRUE;
             fprintf(out, "%s\n", header);
@@ -189,6 +191,7 @@ int main(int argc, char **argv)
 
    - 31.03.20 Original   By: ACRM
    - 14.04.20 Added showAlignment
+CHECKED - ERROR IS IN ScanAgainstDB
 */
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                 int chainType, char *species, char *dataDir)
@@ -233,7 +236,6 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       hvScore = ScanAgainstDB("heavy_v", seq, verbose, species,
                               hvMatch,  hvBestAlign1, hvBestAlign2,
                               dataDir);
-
       if((lvScore > hvScore) && (lvScore > THRESHOLD_LV))
       {
          chainType = CHAINTYPE_LIGHT;
@@ -261,8 +263,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       {
          chainType = CHAINTYPE_HEAVY;
       }
-      
-      fprintf(out, "Chain type: %s\n", CHAINTYPE(chainType));
+      fprintf(out, "# Chain type: %s\n", CHAINTYPE(chainType));
    }
 
    switch(chainType)
@@ -387,8 +388,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       break;
       
    default:
-      fprintf(stderr, "Can't identify chain type!\n");
-      exit (1);
+      fprintf(stderr, "Error: Can't identify chain type!\n");
    }
 }
 
@@ -472,8 +472,10 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
    {
       char header[MAXBUFF+1];
       char *seq = NULL;
+      static char fastaBuffer[MAXBUFF+1];
 
-      while((seq = blReadFASTA(dbFp, header, MAXBUFF))!=NULL)
+      while((seq = blReadFASTAExtBuffer(dbFp, header, MAXBUFF,
+                                        fastaBuffer, MAXBUFF))!=NULL)
       {
          if((species[0] == '\0') ||
             (strstr(header, species) != NULL))
@@ -547,6 +549,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
          }
          
          free(seq);
+         seq=NULL;
       }
       FCLOSE(dbFp);
    }
@@ -567,6 +570,7 @@ location of the processed sequence files.\n",
 
    strncpy(match, bestMatch, MAXBUFF);
    return(maxScore);
+
 }
 
 
@@ -596,6 +600,7 @@ int CalculateDbLen(char *seq)
    sees if the new one has a preferred name
 
    - 31.03.20 Original   By: ACRM
+CHECKED
 */
 BOOL PreferHeader(char *newHeader, char *oldHeader)
 {
@@ -612,7 +617,7 @@ BOOL PreferHeader(char *newHeader, char *oldHeader)
    int  newAllele,
         oldAllele,
         oldNum, newNum;
-   
+
    GetDomainID(newHeader, newID, SMALLBUFF);
    GetDomainID(oldHeader, oldID, SMALLBUFF);
 
@@ -799,10 +804,11 @@ int CalcShortSeqLen(char *align1, char *align2)
 -  14.03.20 V1.1 Added -a
 -  11.06.21 V1.2
 -  13.06.22 V1.4
+-  14.11.22 V1.5
 */
 void Usage(void)
 {
-   printf("\nagl V1.4 (c) 2020 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.5 (c) 2020-22 UCL, Prof. Andrew C.R. Martin\n\n");
 
    printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [-a] \
 [file.faa [out.txt]]\n");
@@ -825,6 +831,9 @@ scores the\n");
 the basis\n");
    printf("of the lowest sub-class, family and allele number.\n");
 
+   printf("\nAs of V1.5, the FASTA file may contain multiple \
+sequences.\n");
+   
    printf("\nIf a data directory is not specified using -d, it will \
 first look in the\n");
    printf("share/agl/data directory below the location of the \
@@ -1033,23 +1042,23 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
 */
 void PrintResult(FILE *out, char *domain, REAL score, char *match)
 {
-   char id[32],
-        frame[8],
-        species[32];
+   char id[LABELBUFF],
+        frame[LABELBUFF],
+        species[LABELBUFF];
    
    match = strchr(match, '_');
    match++;
-   strncpy(id, match, 31);
+   strncpy(id, match, LABELBUFF-1);
    TERMAT(id, '_');
 
    match = strchr(match, '_');
    match++;
-   strncpy(frame, match, 7);
+   strncpy(frame, match, LABELBUFF-1);
    TERMAT(frame, '_');
    
    match = strchr(match, '_');
    match++;
-   strncpy(species, match, 31);
+   strncpy(species, match, LABELBUFF-1);
    
    fprintf(out, "%-7s : %6.2f%% : %-12s : %s : %s\n",
            domain, 100.0*score, id, frame, species);
