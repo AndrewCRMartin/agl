@@ -101,7 +101,7 @@ REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
                    char *dataDir);
 REAL CompareSeqs(char *theSeq, char *seq, int window,
-                 char *align1, char *align2);
+                 char *align1, char *align2, BOOL noScale);
 BOOL PreferHeader(char *newHeader, char *oldHeader);
 void GetDomainID(char *header, char *id, int maxbuff);
 void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose);
@@ -511,14 +511,23 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
             REAL score;
             int  dbLen;
             int  window = 10;
+            BOOL noScale = FALSE;
 
-            /* Use a window of 10 by default, or a window of 2 for 
-               constant regions
-            */
-            if(strncmp(header, ">C", 2))
+            if(header[1] == 'C')
+            {
+               /* Use a window of 10 by default, or a window of 2 for 
+                  constant regions
+               */
                window = 2;
+            }
+            else if(header[1] == 'D')
+            {
+               /* Don't scale the score if it's a D-segment             */
+               noScale = TRUE;
+            }
             
-            score = CompareSeqs(theSeq, seq, window, align1, align2);
+            score = CompareSeqs(theSeq, seq, window, align1, align2,
+                                noScale);
             dbLen = CalculateDbLen(align2);
 
 #ifdef DEBUG
@@ -744,7 +753,7 @@ void GetDomainID(char *header, char *id, int maxbuff)
 
 /************************************************************************/
 /*>REAL CompareSeqs(char *theSeq, char *seq, int window, 
-                    char *align1, char *align2)
+                    char *align1, char *align2, BOOL noScale)
    ---------------------------------------------------------------------
 *//**
    \param[in]   theSeq   the sequence of interest
@@ -752,14 +761,16 @@ void GetDomainID(char *header, char *id, int maxbuff)
    \param[in]   window   Window size
    \param[out]  align1   Alignment of our sequence
    \param[out]  align2   Alignment of database sequence
+   \param[in]   noScale  Don't scale score by length (for D-segment)
    \return               Score for alignment
 
    - 31.03.20 Original   By: ACRM
    - 13.06.22 Changed to use a window in the alignment to speed it up
               Added window size as a parameter
+   - 26.04.23 Added noScale
 */
 REAL CompareSeqs(char *theSeq, char *seq, int window,
-                 char *align1, char *align2)
+                 char *align1, char *align2, BOOL noScale)
 {
    int  score;
    int  alignLen;
@@ -783,6 +794,9 @@ REAL CompareSeqs(char *theSeq, char *seq, int window,
    fprintf(stderr, "\n>>>%s\n", align1);
    fprintf(stderr, ">>>%s %d\n", align2, shortSeqLen);
 #endif
+
+   if(noScale)
+      return((REAL)score);
    
    return((REAL)score / (REAL)shortSeqLen);
 }
@@ -1122,8 +1136,8 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match)
 
    Displays the aligned region of the two sequences
 
-   14.04.20 Original   By: ACRM
-   14.06.21 Added printing of number of mismatches
+-  14.04.20 Original   By: ACRM
+-  14.06.21 Added printing of number of mismatches
 */
 void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
 {
@@ -1176,26 +1190,29 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
 }
 
 
-#ifdef USEPATH
 /************************************************************************/
-char *FindPath(void)
-{
-  char *path = NULL;
-  int  length, dirnameLength;
+/*>void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
+                   char *hvBestAlign1, char *hvBestAlign2, 
+                   char *hjBestAlign1, char *hjBestAlign2,
+                   BOOL verbose, BOOL showAlignment)
+*//**
+   \param[in]     *out           Output file pointer
+   \param[in,out] *seq           Sequence to analyze
+   \param[in]     *species       "Homo", "Mus" or blank
+   \param[in]     *dataDir       Data directory
+   \param[in]     *hvBestAlign1  Best VH alignment (in seq)
+   \param[in]     *hvBestAlign2  Best VH alignment (in database)
+   \param[in]     *hjBestAlign1  Best JH alignment (in seq)
+   \param[in]     *hjBestAlign2  Best JH alignment (in database)
+   \param[in]     verbose        Verbose output
+   \param[in]     showAlignment  Show the alignment of the region
 
-  if((length = wai_getExecutablePath(NULL, 0, &dirnameLength)) > 0)
-  {
-     if((path = (char*)malloc(length + 1))==NULL)
-        return(NULL);
-     
-    wai_getExecutablePath(path, length, &dirnameLength);
-    path[dirnameLength] = '\0';
-    return(path);
-  }
+   Handle the identification of a D-segment. If we are not deleting
+   regions, then this does so and extracts just the region between
+   V and J since this is so short.
 
-  return(NULL);
-}
-
+-  26.04.23 Original   By: ACRM   
+*/
 void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
                 char *hvBestAlign1, char *hvBestAlign2, 
                 char *hjBestAlign1, char *hjBestAlign2,
@@ -1212,10 +1229,7 @@ void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
    RemoveSequence(seq, hjBestAlign1, hjBestAlign2, verbose);
 #endif
 
-   fprintf(stderr, "SEQ: %s\n", seq);
    CopyDSegment(DSeq, seq);
-   fprintf(stderr, "D: %s\n", DSeq);
-   
    
    hdScore = ScanAgainstDB("heavy_d", DSeq, verbose, species,
                            hdMatch, bestAlign1, bestAlign2,
@@ -1223,12 +1237,27 @@ void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
 
    if(hdScore > THRESHOLD_HD)
    {
-      PrintResult(out, "DH", hdScore, hdMatch);
+      int alnLength = CalcShortSeqLen(bestAlign1, bestAlign2);
+      
+      PrintResult(out, "DH", hdScore/(REAL)alnLength, hdMatch);
       if(showAlignment)
          PrintAlignment(out, bestAlign1, bestAlign2);
    }
 }
 
+/************************************************************************/
+/*>void CopyDSegment(char *DSeq, char *seq)
+   ----------------------------------------
+*//**
+   \param[out]   *DSeq    The region between the V and J segments
+   \param[in]    *seq     Sequence to analyze
+
+   Takes the sequence (seq) which has the V and J regions masked out
+   with X characters and then extracts the region between them and
+   copies it into DSeq.
+
+-  26.04.23 Original   By: ACRM   
+*/
 void CopyDSegment(char *DSeq, char *seq)
 {
    int inPos  = 0,
@@ -1261,7 +1290,25 @@ void CopyDSegment(char *DSeq, char *seq)
    DSeq[outPos] = '\0';
 }
 
+#ifdef USEPATH
+/************************************************************************/
+char *FindPath(void)
+{
+  char *path = NULL;
+  int  length, dirnameLength;
 
+  if((length = wai_getExecutablePath(NULL, 0, &dirnameLength)) > 0)
+  {
+     if((path = (char*)malloc(length + 1))==NULL)
+        return(NULL);
+     
+    wai_getExecutablePath(path, length, &dirnameLength);
+    path[dirnameLength] = '\0';
+    return(path);
+  }
+
+  return(NULL);
+}
 
 /************************************************************************/
 #include <dirent.h>
