@@ -140,26 +140,20 @@ GGGTKLTVL
 - 12421H gives JH IGHJ3\*01 instead of IGHJ6*01. The latter is longer
   and has the same number of mismatches.
 
-Data
-----
+Data and setup
+--------------
 
 The code uses germline DNA data from IMGT. The `data` directory of the
 distribtion contains these Fasta files containing DNA sequences for
-the germline gene segments and `makedb.pl` translates these to create
-files in the AGL data directory.
+the germline gene segments obtained from
+http://ftp.ebi.ac.uk/pub/databases/imgt/ligm/imgtrefseq.fasta
 
-Note that commercial use of the DNA data requires a licence from IMGT.
+`makedb.pl` translates these to create files in `./share/agl/data`.
 
+By default, AGL will expect this directory to exist under the
+directory in which the agl executable is found (the `install.sh`
+script will handle all this). Alternatively, the environment variable,
+`AGLDATADIR` can point this data directory (or you can use `-d` on the
+`agl` command line).
 
-Setup
------
-
-The `data` directory contains fasta files containing DNA sequences for
-the germline gene segments.
-
-`makedb.pl` translates these to create files in `mydata`.
-
-The environment variable, `AGLDATADIR` must point to the `mydata`
-directory (or use `-d` on the `agl` command line.
-
-
+**Note that commercial use of the DNA data requires a licence from IMGT.**

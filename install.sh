@@ -33,6 +33,10 @@ fi
 
 (cd src; make)
 
+echo "Grabbing the latest D-SEGMENT data"
+(cd util; ./grab_imgt.sh)
+echo "done"
+
 echo -n "Building data..."
 ./util/makedb.pl
 echo "done"
