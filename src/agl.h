@@ -68,6 +68,7 @@
 #define THRESHOLD_HV        0.5
 #define THRESHOLD_HJ        0.5
 #define THRESHOLD_HC        0.5
+#define THRESHOLD_HD        0.5
 #define THRESHOLD_LEN_SCORE 0.01 /* Score can drop by this if the 
                                     length increases                    */
 #define THRESHOLD_SCORE_INC 0.02 /* Score must increase by this much 

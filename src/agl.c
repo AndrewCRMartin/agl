@@ -4,11 +4,11 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.5
-   \date       14.11.22
+   \version    V1.6
+   \date       26.04.23
    \brief      Assigns IMGT germline
    
-   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-22
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-23
    \author     Prof. Andrew C. R. Martin
    \par
                Institute of Structural & Molecular Biology,
@@ -53,6 +53,7 @@
    V1.3   14.06.21  Added printing of mismatches with -a
    V1.4   13.06.22  Now uses a window in the alignment
    V1.5   14.11.22  Now supports FASTA input with multiple sequences
+   V1.6   26.04.23  Added D-segment option
 
 *************************************************************************/
 /* Includes
@@ -73,6 +74,10 @@
 /************************************************************************/
 /* Defines and macros
 */
+#define BLOCK_UNDEFINED 0
+#define BLOCK_X_V       1
+#define BLOCK_D         2
+
 #define CHAINTYPE(x) (                            \
    (x)==CHAINTYPE_LIGHT ? "Light" :               \
     ((x)==CHAINTYPE_HEAVY ? "Heavy" : "Unknown"))
@@ -88,9 +93,10 @@ int main(int argc, char **argv);
 void Usage(void);
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                   BOOL *verbose, BOOL *showAlignment, int *chainType,
-                  char *species, char *dataDir);
+                  char *species, char *dataDir, BOOL *doDSegment);
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
-                int chainType, char *species, char *dataDir);
+                int chainType, char *species, char *dataDir,
+                BOOL doDSegment);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
                    char *dataDir);
@@ -103,6 +109,12 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match);
 int CalculateDbLen(char *seq);
 int CalcShortSeqLen(char *align1, char *align2);
 void PrintAlignment(FILE *out, char *align1, char *align2);
+void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
+                char *hvBestAlign1, char *hvBestAlign2, 
+                char *hjBestAlign1, char *hjBestAlign2,
+                BOOL verbose, BOOL showAlignment);
+void CopyDSegment(char *DSeq, char *seq);
+
 #ifdef USEPATH
 char *FindPath(void);
 BOOL DirectoryExists(char *dirName);
@@ -123,12 +135,13 @@ int main(int argc, char **argv)
         species[MAXBUFF+1],
         dataDir[MAXBUFF+1];
    BOOL verbose       = FALSE,
-        showAlignment = FALSE;
+        showAlignment = FALSE,
+        doDSegment    = FALSE;
    int  chainType     = CHAINTYPE_UNKNOWN;
 
 
    if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &showAlignment,
-                   &chainType, species, dataDir))
+                   &chainType, species, dataDir, &doDSegment))
    {
       FILE *in  = stdin,
            *out = stdout;
@@ -147,7 +160,7 @@ int main(int argc, char **argv)
             fprintf(out, "%s\n", header);
 
             ProcessSeq(out, seq, verbose, showAlignment,
-                       chainType, species, dataDir);
+                       chainType, species, dataDir, doDSegment);
             free(seq);
          }
 
@@ -176,7 +189,8 @@ int main(int argc, char **argv)
 
 /************************************************************************/
 /*>void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
-                   int chainType, char *species, char *dataDir)
+                   int chainType, char *species, char *dataDir,
+                   BOOL doDSegment)
    ------------------------------------------------------------------
 *//**
    \param[in]   out            Output file pointer
@@ -186,15 +200,17 @@ int main(int argc, char **argv)
    \param[in]   chainType      Type of chain (or unknown)
    \param[in]   species        "Homo", "Mus" or blank
    \param[in]   dataDir        Data directory
-
-   Processes a sequence sending output to the specified file
+   \param[in]   doDSegment     Handle D-segment for heavy chains
 
    - 31.03.20 Original   By: ACRM
    - 14.04.20 Added showAlignment
+   - 26.04.23 Added D-segment handling
 CHECKED - ERROR IS IN ScanAgainstDB
 */
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
-                int chainType, char *species, char *dataDir)
+                int chainType, char *species, char *dataDir,
+                BOOL doDSegment)
+
 {
    char        lvMatch[MAXBUFF+1],
                hvMatch[MAXBUFF+1],
@@ -361,6 +377,17 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
             PrintResult(out, "JH", hjScore, hjMatch);
             if(showAlignment)
                PrintAlignment(out, bestAlign1, bestAlign2);
+
+            /* If we have found both V and J, then we can try to find
+               the D segment (if required)
+            */
+            if(doDSegment)
+            {
+               DoDSegment(out, seq, species, dataDir,
+                          hvBestAlign1, hvBestAlign2,  /* V             */
+                          bestAlign1,   bestAlign2,    /* J             */
+                          verbose, showAlignment);
+            }
          }
       }
 
@@ -464,6 +491,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
       sprintf(filename, "%s.dat", type);
 #endif
    }
+
    
    if(verbose)
       fprintf(stderr,"\n\nChecking %s\n", type);
@@ -492,7 +520,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
             
             score = CompareSeqs(theSeq, seq, window, align1, align2);
             dbLen = CalculateDbLen(align2);
-            
+
 #ifdef DEBUG
             if(verbose)
                fprintf(stderr, "Comparing with %s {%f, %f} {%d, %d}\n",
@@ -805,15 +833,17 @@ int CalcShortSeqLen(char *align1, char *align2)
 -  11.06.21 V1.2
 -  13.06.22 V1.4
 -  14.11.22 V1.5
+-  26.04.23 V1.6
 */
 void Usage(void)
 {
-   printf("\nagl V1.5 (c) 2020-22 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.6 (c) 2020-23 UCL, Prof. Andrew C.R. Martin\n\n");
 
-   printf("Usage: agl [-H|-L] [-s species] [-d datadir] [-v] [-a] \
+   printf("Usage: agl [-H|-L] [-D] [-s species] [-d datadir] [-v] [-a] \
 [file.faa [out.txt]]\n");
    printf("           -H Heavy chain\n");
    printf("           -L Light chain\n");
+   printf("           -D Do the D-segment with heavy chains\n");
    printf("           -s Specify a species (Homo or Mus)\n");
    printf("           -d Specify data directory\n");
    printf("           -v Verbose\n");
@@ -847,7 +877,8 @@ specified using the\n");
 /************************************************************************/
 /*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                      BOOL *verbose, BOOL *showAlignment, 
-                     int *chainType, char *species, char *dataDir)
+                     int *chainType, char *species, char *dataDir,
+                     BOOL *doDSegment)
    ---------------------------------------------------------------------
 *//**
    \param[in]   argc           Argument count
@@ -859,15 +890,18 @@ specified using the\n");
    \param[out]  *chainType     Chain type
    \param[out]  *species       Species or blank string
    \param[out]  *dataDir       Data directory or blank string
+   \param[out]  *doDSegment    Handle the D segment for heavy chains
    \return                     Success
 
    Parse the command line
 
 -  31.03.20 Original    By: ACRM
+-  26.04.23 Added -D/doDSegment
 */
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                   BOOL *verbose, BOOL *showAlignment, int *chainType,
-                  char *species, char *dataDir)
+                  char *species, char *dataDir,
+                  BOOL *doDSegment)
 {
    argc--;
    argv++;
@@ -886,6 +920,9 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
             break;
          case 'a':
             *showAlignment = TRUE;
+            break;
+         case 'D':
+            *doDSegment = TRUE;
             break;
          case 'L':
          case 'l':
@@ -995,7 +1032,8 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
 
    if(verbose)
       fprintf(stderr, "Start: %d Stop: %d\n", start, stop);
-   
+
+#ifdef OLD
    /* Copy up to the start                                              */
    j=0;
    for(i=0; i<start; i++)
@@ -1021,6 +1059,15 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
    i = strlen(seq);
    strncpy(seq, buffer, i);
    seq[i] = '\0';
+#else
+   for(i=0; i<strlen(seq); i++)
+   {
+      if((i>=start) && (i<=stop))
+      {
+         seq[i] = 'X';
+      }
+   }
+#endif
    
    if(verbose)
       fprintf(stderr, "Output seq:       %s\n", seq);
@@ -1148,6 +1195,72 @@ char *FindPath(void)
 
   return(NULL);
 }
+
+void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
+                char *hvBestAlign1, char *hvBestAlign2, 
+                char *hjBestAlign1, char *hjBestAlign2,
+                BOOL verbose, BOOL showAlignment)
+{
+   char        hdMatch[MAXBUFF+1],
+               DSeq[MAXBUFF+1];
+   static char bestAlign1[HUGEBUFF+1],
+               bestAlign2[HUGEBUFF+1];
+   REAL        hdScore     = -1.0;
+   
+#ifndef REMOVESEQS
+   RemoveSequence(seq, hvBestAlign1, hvBestAlign2, verbose);
+   RemoveSequence(seq, hjBestAlign1, hjBestAlign2, verbose);
+#endif
+
+   fprintf(stderr, "SEQ: %s\n", seq);
+   CopyDSegment(DSeq, seq);
+   fprintf(stderr, "D: %s\n", DSeq);
+   
+   
+   hdScore = ScanAgainstDB("heavy_d", DSeq, verbose, species,
+                           hdMatch, bestAlign1, bestAlign2,
+                           dataDir);
+
+   if(hdScore > THRESHOLD_HD)
+   {
+      PrintResult(out, "DH", hdScore, hdMatch);
+      if(showAlignment)
+         PrintAlignment(out, bestAlign1, bestAlign2);
+   }
+}
+
+void CopyDSegment(char *DSeq, char *seq)
+{
+   int inPos  = 0,
+       outPos = 0,
+       block  = BLOCK_UNDEFINED;
+   
+   for(inPos=0, outPos=0;  inPos<strlen(seq);  inPos++)
+   {
+      switch(block)
+      {
+      case BLOCK_UNDEFINED:
+         if(seq[inPos] == 'X') block = BLOCK_X_V;
+         break;
+      case BLOCK_X_V:
+         if(seq[inPos] != 'X')
+         {
+            block = BLOCK_D;
+            DSeq[outPos++] = seq[inPos];
+         }
+         break;
+      case BLOCK_D:
+         if(seq[inPos] == 'X')
+         {
+            inPos = strlen(seq+1);
+            break;
+         }
+         DSeq[outPos++] = seq[inPos];
+      }
+   }
+   DSeq[outPos] = '\0';
+}
+
 
 
 /************************************************************************/
