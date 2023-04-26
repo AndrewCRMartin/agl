@@ -157,6 +157,7 @@ sub PrintTranslations
 
         if((length($aaSeq) > 90) ||
            ($domain eq 'CHS')    ||
+           ($info =~ /D-REGION/) ||
            ($info =~ /J-REGION/))
         {
             my $numStops = () = $aaSeq =~ /\*/g;
@@ -189,7 +190,8 @@ sub CreateHeader
             $header = ">${thisDomain}_${gene}_F${frame}_$species";
         }
     }
-    elsif(($thisDomain =~ /^CH/) || ($thisDomain =~ /^[VCJ]-/))
+    elsif(($thisDomain =~ /^CH/) ||
+          ($thisDomain =~ /^[VCJD]-/))
     {
         $header = ">${thisDomain}_${gene}_F${frame}_$species";
     }
