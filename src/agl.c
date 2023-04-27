@@ -53,7 +53,8 @@
    V1.3   14.06.21  Added printing of mismatches with -a
    V1.4   13.06.22  Now uses a window in the alignment
    V1.5   14.11.22  Now supports FASTA input with multiple sequences
-   V1.6   26.04.23  Added D-segment option
+   V1.6   26.04.23  Added D-segment option and fixed gap penalty in
+                    alignment
 
 *************************************************************************/
 /* Includes
