@@ -768,6 +768,7 @@ void GetDomainID(char *header, char *id, int maxbuff)
    - 13.06.22 Changed to use a window in the alignment to speed it up
               Added window size as a parameter
    - 26.04.23 Added noScale
+   - 27.04.23 Changed extension penalty from 5 to 1
 */
 REAL CompareSeqs(char *theSeq, char *seq, int window,
                  char *align1, char *align2, BOOL noScale)
@@ -781,7 +782,7 @@ REAL CompareSeqs(char *theSeq, char *seq, int window,
                                FALSE,  /* verbose            */
                                TRUE,   /* identity           */
                                5,      /* opening penalty    */
-                               5,      /* extension penalty  */
+                               1,      /* extension penalty  */
                                window, /* window             */
                                align1,
                                align2,
