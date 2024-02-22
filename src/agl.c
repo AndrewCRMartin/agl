@@ -1343,6 +1343,25 @@ BOOL PrintSpecialMatches(FILE *out, char *CH1, char *CH2, char *CH3)
       fprintf(out, "*** CH1/2/3 matches IGHG1*15\n");
       return(TRUE);
    }
+   else if (!strncmp(CH1, "IGHG1*03", 8) &&
+            !strncmp(CH2, "IGHG1*01", 8) &&
+            !strncmp(CH3, "IGHG1*03", 8))
+   {
+      fprintf(out, "*** CH1/2/3 matches IGHG1*03\n");
+      return(TRUE);
+   }
+   else if (!strncmp(CH1, "IGHG1*01", 8) &&
+            !strncmp(CH3, "IGHG1*04", 8))
+   {
+      fprintf(out, "*** CH1/2/3 matches IGHG1*04\n");
+      return(TRUE);
+   }
+   else if (!strncmp(CH1, "IGHG1*01", 8) &&
+            !strncmp(CH3, "IGHG1*07", 8))
+   {
+      fprintf(out, "*** CH1/2/3 matches IGHG1*07\n");
+      return(TRUE);
+   }
    
    return(FALSE);
 }
