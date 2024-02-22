@@ -4,11 +4,11 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.6
-   \date       26.04.23
+   \version    V1.7
+   \date       22.02.24
    \brief      Assigns IMGT germline
    
-   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-23
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-24
    \author     Prof. Andrew C. R. Martin
    \par
                Institute of Structural & Molecular Biology,
@@ -55,11 +55,12 @@
    V1.5   14.11.22  Now supports FASTA input with multiple sequences
    V1.6   26.04.23  Added D-segment option and fixed gap penalty in
                     alignment
+   V1.7   22.04.23  Adds info on IGHG1*08 and IGHG1*15
 
 *************************************************************************/
 /* Includes
 */
-#define USEPATH
+#define USEPATH 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,6 +116,7 @@ void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
                 char *hjBestAlign1, char *hjBestAlign2,
                 BOOL verbose, BOOL showAlignment);
 void CopyDSegment(char *DSeq, char *seq);
+BOOL PrintSpecialMatches(FILE *out, char *CH1, char *CH2, char *CH3);
 
 #ifdef USEPATH
 char *FindPath(void);
@@ -412,9 +414,14 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
          if(showAlignment)
             PrintAlignment(out, CH3BestAlign1, CH3BestAlign2);
       }
-      
+
+      /* 22.02.24 Added to print info on special cases where mixed allelic
+         variants actually indicate a higher numbered allele
+      */
+      PrintSpecialMatches(out, CH1Match, CH2Match, CH3CHSMatch);
+
       break;
-      
+
    default:
       fprintf(stderr, "Error: Can't identify chain type!\n");
    }
@@ -425,7 +432,6 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
 /*>REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, 
                       char *species, char *match, char *bestAlign1, 
                       char *bestAlign2, char *dataDir)
-
    -----------------------------------------------------------------------
 *//**
    \param[in]  type       The database type against which we scan
@@ -850,10 +856,11 @@ int CalcShortSeqLen(char *align1, char *align2)
 -  13.06.22 V1.4
 -  14.11.22 V1.5
 -  26.04.23 V1.6
+-  22.02.24 V1.7
 */
 void Usage(void)
 {
-   printf("\nagl V1.6 (c) 2020-23 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.7 (c) 2020-24 UCL, Prof. Andrew C.R. Martin\n\n");
 
    printf("Usage: agl [-H|-L] [-D] [-s species] [-d datadir] [-v] [-a] \
 [file.faa [out.txt]]\n");
@@ -1291,6 +1298,56 @@ void CopyDSegment(char *DSeq, char *seq)
    }
    DSeq[outPos] = '\0';
 }
+
+
+/************************************************************************/
+/*>BOOL PrintSpecialMatches(FILE *out, char *CH1, char *CH2, char *CH3)
+   --------------------------------------------------------------------
+*//**
+     \param[in]   out    Output file pointer
+     \param[in]   CH1    CH1 label
+     \param[in]   CH2    CH2 label
+     \param[in]   CH3    CH3-CHS label
+     \return             True if this was a special case; false otherwise
+
+     Looks for cases where apparent mixed allelic variants actually match
+     a different allelic variant indentifier.
+
+     - 22.02.24 Original   By: ACRM
+*/
+BOOL PrintSpecialMatches(FILE *out, char *CH1, char *CH2, char *CH3)
+{
+   CH1 = strchr(CH1, '_');
+   CH1++;
+   TERMAT(CH1, '_');
+   
+   CH2 = strchr(CH2, '_');
+   CH2++;
+   TERMAT(CH2, '_');
+   
+   CH3 = strchr(CH3, '_');
+   CH3++;
+   TERMAT(CH3, '_');
+   
+   if(!strncmp(CH1, "IGHG1*03", 8) &&
+      !strncmp(CH2, "IGHG1*01", 8) &&
+      !strncmp(CH3, "IGHG1*01", 8))
+   {
+      fprintf(out, "*CH1/2/3 matches IGHG1*08\n");
+      return(TRUE);
+   }
+   else if (!strncmp(CH1, "IGHG1*01", 8) &&
+            !strncmp(CH2, "IGHG1*01", 8) &&
+            !strncmp(CH3, "IGHG1*03", 8))
+   {
+      fprintf(out, "*** CH1/2/3 matches IGHG1*15\n");
+      return(TRUE);
+   }
+   
+   return(FALSE);
+}
+
+
 
 #ifdef USEPATH
 /************************************************************************/
