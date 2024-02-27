@@ -66,6 +66,8 @@ have been codon optimized to improve expression.
 Actual Known Problems
 ---------------------
 
+- 13112L gives VL IGKV2-40\*01 instead of IGKV2-28\*01 (which is clearly better)
+
 - 11351L gives VL IGKV3-11\*01 instead of IGKV3D-11\*02 (longer but a lot worse)
 
 - 11366H gives JH IGHJ3\*01 instead of IGHJ1\*01
