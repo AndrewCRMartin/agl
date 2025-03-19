@@ -44,4 +44,5 @@ echo "done"
 echo -n "Copying files to ${dest}..."
 cp agl $dest
 cp -p share/agl/data/* $datadest
+cp -p staticdata/*     $datadest
 echo "done"

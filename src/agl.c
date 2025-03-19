@@ -4,11 +4,11 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.7
-   \date       22.02.24
+   \version    V1.8
+   \date       19.03.25
    \brief      Assigns IMGT germline
    
-   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-24
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-25
    \author     Prof. Andrew C. R. Martin
    \par
                Institute of Structural & Molecular Biology,
@@ -56,6 +56,7 @@
    V1.6   26.04.23  Added D-segment option and fixed gap penalty in
                     alignment
    V1.7   22.04.23  Adds info on IGHG1*08 and IGHG1*15
+   V1.8   19.03.25  Added hinges
 
 *************************************************************************/
 /* Includes
@@ -208,6 +209,7 @@ int main(int argc, char **argv)
    - 31.03.20 Original   By: ACRM
    - 14.04.20 Added showAlignment
    - 26.04.23 Added D-segment handling
+   - 19.03.25 Added hinge handling
 CHECKED - ERROR IS IN ScanAgainstDB
 */
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
@@ -222,6 +224,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                lcMatch[MAXBUFF+1],
                CH1Match[MAXBUFF+1],
                CH2Match[MAXBUFF+1],
+               hingeMatch[MAXBUFF+1],
                CH3CHSMatch[MAXBUFF+1];
    static char lvBestAlign1[HUGEBUFF+1],
                lvBestAlign2[HUGEBUFF+1],
@@ -235,6 +238,8 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                CH2BestAlign2[HUGEBUFF+1],
                CH3BestAlign1[HUGEBUFF+1],
                CH3BestAlign2[HUGEBUFF+1],
+               hingeBestAlign1[HUGEBUFF+1],
+               hingeBestAlign2[HUGEBUFF+1],
                bestAlign1[HUGEBUFF+1],
                bestAlign2[HUGEBUFF+1];
    REAL        lvScore     = -1.0,
@@ -244,6 +249,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                lcScore     = -1.0,
                CH1Score    = -1.0,
                CH2Score    = -1.0,
+               hingeScore  = -1.0,
                CH3CHSScore = -1.0;
 
    /* Find out what the chain type is if it isn't specified             */
@@ -360,6 +366,13 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                                   hvMatch, hvBestAlign1, hvBestAlign2,
                                   dataDir);
 
+      if(CH1Match[0] && CH2Match[0])
+      {
+         hingeScore  = ScanAgainstDB("hinges", seq, verbose, species,
+                                     hingeMatch, hingeBestAlign1,
+                                     hingeBestAlign2, dataDir);
+      }
+      
       if(hvScore > THRESHOLD_HV)
       {
 #ifdef REMOVESEQS
@@ -401,6 +414,13 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
             PrintAlignment(out, CH1BestAlign1, CH1BestAlign2);
       }
       
+      if(hingeScore > THRESHOLD_HINGE)
+      {
+         PrintResult(out, "HINGE", hingeScore, hingeMatch);
+         if(showAlignment)
+            PrintAlignment(out, hingeBestAlign1, hingeBestAlign2);
+      }
+      
       if(CH2Score > THRESHOLD_HC)
       {
          PrintResult(out, "CH2", CH2Score, CH2Match);
@@ -415,6 +435,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
             PrintAlignment(out, CH3BestAlign1, CH3BestAlign2);
       }
 
+      
       /* 22.02.24 Added to print info on special cases where mixed allelic
          variants actually indicate a higher numbered allele
       */
@@ -520,7 +541,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
             int  window = 10;
             BOOL noScale = FALSE;
 
-            if(header[1] == 'C')
+            if(header[1] == 'C')   // ******************** HERE
             {
                /* Use a window of 10 by default, or a window of 2 for 
                   constant regions
@@ -857,10 +878,11 @@ int CalcShortSeqLen(char *align1, char *align2)
 -  14.11.22 V1.5
 -  26.04.23 V1.6
 -  22.02.24 V1.7
+-  19.03.25 V1.8
 */
 void Usage(void)
 {
-   printf("\nagl V1.7 (c) 2020-24 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.8 (c) 2020-25 UCL, Prof. Andrew C.R. Martin\n\n");
 
    printf("Usage: agl [-H|-L] [-D] [-s species] [-d datadir] [-v] [-a] \
 [file.faa [out.txt]]\n");
