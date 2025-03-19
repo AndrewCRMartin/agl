@@ -470,6 +470,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
    - 31.03.20 Original   By: ACRM
    - 11.06.21 Added USEPATH code
    - 13.06.22 Added window size of 2 for C regions and 10 for others
+   - 19.03.25 Initialize match
 */
 REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
@@ -484,6 +485,8 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
    static char align1[HUGEBUFF+1],
                align2[HUGEBUFF+1];
 
+   match[0] = '\0';
+   
    if(dataDir[0] != '\0')
    {
       sprintf(filename, "%s/%s.dat", dataDir, type);
@@ -541,7 +544,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
             int  window = 10;
             BOOL noScale = FALSE;
 
-            if(header[1] == 'C')   // ******************** HERE
+            if(header[1] == 'C')
             {
                /* Use a window of 10 by default, or a window of 2 for 
                   constant regions
