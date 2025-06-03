@@ -912,6 +912,8 @@ the basis\n");
    printf("\nAs of V1.5, the FASTA file may contain multiple \
 sequences.\n");
    
+   printf("\nAs of V1.8, hinges and their mutations are included.\n");
+   
    printf("\nIf a data directory is not specified using -d, it will \
 first look in the\n");
    printf("share/agl/data directory below the location of the \
