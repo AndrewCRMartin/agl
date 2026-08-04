@@ -2,18 +2,20 @@ EXE=../agl
 OFILES=agl.o findfields.o whereami/whereami.o
 HFILES=agl.h findfields.h whereami/whereami.h
 
-LIBS=$(HOME)/lib
+LIBDIR=$(HOME)/lib
 INCLUDE=$(HOME)/include
+LIBS=-lbiop -lgen -lm -lxml2 
+#LIBS=-lbiop -lgen -lm -lxml2 -lasan
 
-CFLAGS=-g
-CC=cc $(CFLAGS) -L$(LIBS) -I$(INCLUDE)
-CC=cc $(CFLAGS) -L$(LIBS) -I$(INCLUDE) -fsanitize=address
+#CFLAGS=-g
+CC=cc $(CFLAGS) -L$(LIBDIR) -I$(INCLUDE)
+#CC=cc $(CFLAGS) -L$(LIBDIR) -I$(INCLUDE) -fsanitize=address
 
 #CFLAGS=-O3
-#CC=cc $(CFLAGS) -L$(LIBS) -I$(INCLUDE)
+#CC=cc $(CFLAGS) -L$(LIBDIR) -I$(INCLUDE)
 
 $(EXE) : $(OFILES)
-	$(CC) -o $@ $(OFILES) -lbiop -lgen -lm -lxml2 -lasan
+	$(CC) -o $@ $(OFILES) $(LIBS)
 
 agl.o : agl.c $(HFILES)
 	$(CC) -c -o $@ $<
