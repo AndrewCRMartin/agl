@@ -4,11 +4,11 @@
    Program:    agl (Assign Germ Line)
    \file       agl.c
    
-   \version    V1.8
-   \date       19.03.25
+   \version    V1.9
+   \date       04.08.26
    \brief      Assigns IMGT germline
    
-   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-25
+   \copyright  (c) UCL / Prof. Andrew C. R. Martin 2020-26
    \author     Prof. Andrew C. R. Martin
    \par
                Institute of Structural & Molecular Biology,
@@ -57,6 +57,7 @@
                     alignment
    V1.7   22.04.23  Adds info on IGHG1*08 and IGHG1*15
    V1.8   19.03.25  Added hinges
+   V1.9   04.08.26  Added -c to score by counting matches
 
 *************************************************************************/
 /* Includes
@@ -96,28 +97,33 @@ int main(int argc, char **argv);
 void Usage(void);
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                   BOOL *verbose, BOOL *showAlignment, int *chainType,
-                  char *species, char *dataDir, BOOL *doDSegment);
+                  char *species, char *dataDir, BOOL *doDSegment,
+                  BOOL *countMatches);
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                 int chainType, char *species, char *dataDir,
-                BOOL doDSegment);
+                BOOL doDSegment, BOOL countMatches);
 REAL ScanAgainstDB(char *type, char *seq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
-                   char *dataDir);
+                   char *dataDir, BOOL countMatches);
 REAL CompareSeqs(char *theSeq, char *seq, int window,
-                 char *align1, char *align2, BOOL noScale);
+                 char *align1, char *align2, BOOL noScale,
+                 BOOL countMatches);
 BOOL PreferHeader(char *newHeader, char *oldHeader);
 void GetDomainID(char *header, char *id, int maxbuff);
 void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose);
-void PrintResult(FILE *out, char *domain, REAL score, char *match);
+void PrintResult(FILE *out, char *domain, REAL score, char *match,
+                 BOOL countMatches, int alignLen);
 int CalculateDbLen(char *seq);
 int CalcShortSeqLen(char *align1, char *align2);
 void PrintAlignment(FILE *out, char *align1, char *align2);
 void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
                 char *hvBestAlign1, char *hvBestAlign2, 
                 char *hjBestAlign1, char *hjBestAlign2,
-                BOOL verbose, BOOL showAlignment);
+                BOOL verbose, BOOL showAlignment, BOOL countMatches);
 void CopyDSegment(char *DSeq, char *seq);
 BOOL PrintSpecialMatches(FILE *out, char *CH1, char *CH2, char *CH3);
+int doCountMatches(char *align1, char *align2);
+int GetAlignLen(char *inAlign1, char *inAlign2);
 
 #ifdef USEPATH
 char *FindPath(void);
@@ -140,12 +146,14 @@ int main(int argc, char **argv)
         dataDir[MAXBUFF+1];
    BOOL verbose       = FALSE,
         showAlignment = FALSE,
-        doDSegment    = FALSE;
+        doDSegment    = FALSE,
+        countMatches  = FALSE;
    int  chainType     = CHAINTYPE_UNKNOWN;
 
 
    if(ParseCmdLine(argc, argv, infile, outfile, &verbose, &showAlignment,
-                   &chainType, species, dataDir, &doDSegment))
+                   &chainType, species, dataDir, &doDSegment,
+                   &countMatches))
    {
       FILE *in  = stdin,
            *out = stdout;
@@ -164,7 +172,8 @@ int main(int argc, char **argv)
             fprintf(out, "%s\n", header);
 
             ProcessSeq(out, seq, verbose, showAlignment,
-                       chainType, species, dataDir, doDSegment);
+                       chainType, species, dataDir, doDSegment,
+                       countMatches);
             free(seq);
          }
 
@@ -194,7 +203,7 @@ int main(int argc, char **argv)
 /************************************************************************/
 /*>void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                    int chainType, char *species, char *dataDir,
-                   BOOL doDSegment)
+                   BOOL doDSegment, BOOL countMatches)
    ------------------------------------------------------------------
 *//**
    \param[in]   out            Output file pointer
@@ -205,16 +214,18 @@ int main(int argc, char **argv)
    \param[in]   species        "Homo", "Mus" or blank
    \param[in]   dataDir        Data directory
    \param[in]   doDSegment     Handle D-segment for heavy chains
+   \param[in]   countMatches   Score simply by counting matches
 
    - 31.03.20 Original   By: ACRM
    - 14.04.20 Added showAlignment
    - 26.04.23 Added D-segment handling
    - 19.03.25 Added hinge handling
+   - 04.08.26 Added countMatches
 CHECKED - ERROR IS IN ScanAgainstDB
 */
 void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                 int chainType, char *species, char *dataDir,
-                BOOL doDSegment)
+                BOOL doDSegment, BOOL countMatches)
 
 {
    char        lvMatch[MAXBUFF+1],
@@ -257,10 +268,10 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
    {
       lvScore = ScanAgainstDB("light_v", seq, verbose, species,
                               lvMatch,  lvBestAlign1, lvBestAlign2,
-                              dataDir);
+                              dataDir, countMatches);
       hvScore = ScanAgainstDB("heavy_v", seq, verbose, species,
                               hvMatch,  hvBestAlign1, hvBestAlign2,
-                              dataDir);
+                              dataDir, countMatches);
       if((lvScore > hvScore) && (lvScore > THRESHOLD_LV))
       {
          chainType = CHAINTYPE_LIGHT;
@@ -274,10 +285,10 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       {
          lcScore  = ScanAgainstDB("light_c", seq, verbose, species,
                                   lcMatch,  lcBestAlign1,  lcBestAlign2,
-                                  dataDir);
+                                  dataDir, countMatches);
          CH1Score = ScanAgainstDB("CH1",     seq, verbose, species,
                                   CH1Match, CH1BestAlign1, CH1BestAlign2,
-                                  dataDir);
+                                  dataDir, countMatches);
       }
 
       if((lcScore > CH1Score) && (lcScore > THRESHOLD_LC))
@@ -297,23 +308,25 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       if(lvScore < 0.0)
          lvScore = ScanAgainstDB("light_v", seq, verbose, species,
                                  lvMatch, lvBestAlign1, lvBestAlign2,
-                                 dataDir);
+                                 dataDir, countMatches);
       if(lvScore > THRESHOLD_LV)
       {
-         PrintResult(out, "VL", lvScore, lvMatch);
+         PrintResult(out, "VL", lvScore, lvMatch, countMatches,
+                     GetAlignLen(lvBestAlign1, lvBestAlign2));
          if(showAlignment)
             PrintAlignment(out, lvBestAlign1, lvBestAlign2);
 
          ljScore = ScanAgainstDB("light_j", seq, verbose, species,
                                  ljMatch, bestAlign1, bestAlign2,
-                                 dataDir);
+                                 dataDir, countMatches);
          if(ljScore > THRESHOLD_LJ)
          {
 #ifdef REMOVESEQS
             RemoveSequence(seq, lvBestAlign1, lvBestAlign2, verbose);
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
 #endif
-            PrintResult(out, "JL", ljScore, ljMatch);
+            PrintResult(out, "JL", ljScore, ljMatch, countMatches,
+                        GetAlignLen(bestAlign1, bestAlign2));
             if(showAlignment)
                PrintAlignment(out, bestAlign1, bestAlign2);
          }
@@ -322,13 +335,14 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       if(lcScore < 0.0)
          lcScore = ScanAgainstDB("light_c", seq, verbose, species,
                                  lcMatch, lcBestAlign1, lcBestAlign2,
-                                 dataDir);
+                                 dataDir, countMatches);
       if(lcScore > THRESHOLD_LC)
       {
 #ifdef REMOVESEQS
          RemoveSequence(seq, lcBestAlign1, lcBestAlign2, verbose);
 #endif
-         PrintResult(out, "CL", lcScore, lcMatch);
+         PrintResult(out, "CL", lcScore, lcMatch, countMatches,
+                     GetAlignLen(lcBestAlign1, lcBestAlign2));
          if(showAlignment)
             PrintAlignment(out, lcBestAlign1, lcBestAlign2);
       }
@@ -340,7 +354,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
          CH3CHSScore = ScanAgainstDB("CH3-CHS", seq, verbose, species,
                                      CH3CHSMatch,
                                      CH3BestAlign1, CH3BestAlign2,
-                                     dataDir);
+                                     dataDir, countMatches);
 #ifdef REMOVESEQS
       if(CH3CHSScore > THRESHOLD_HC)
          RemoveSequence(seq, CH3BestAlign1, CH3BestAlign2, verbose);
@@ -348,7 +362,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       if(CH2Score < 0.0)
          CH2Score = ScanAgainstDB("CH2", seq, verbose, species,
                                   CH2Match, CH2BestAlign1, CH2BestAlign2,
-                                  dataDir);
+                                  dataDir, countMatches);
 #ifdef REMOVESEQS
       if(CH2Score > THRESHOLD_HC)
          RemoveSequence(seq, CH2BestAlign1, CH2BestAlign2, verbose);
@@ -356,7 +370,7 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       if(CH1Score < 0.0)
          CH1Score = ScanAgainstDB("CH1", seq, verbose, species,
                                   CH1Match, CH1BestAlign1, CH1BestAlign2,
-                                  dataDir);
+                                  dataDir, countMatches);
 #ifdef REMOVESEQS
       if(CH1Score > THRESHOLD_HC)
          RemoveSequence(seq, CH1BestAlign1, CH1BestAlign2, verbose);
@@ -364,13 +378,14 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
       if(hvScore < 0.0)
          hvScore  = ScanAgainstDB("heavy_v", seq, verbose, species,
                                   hvMatch, hvBestAlign1, hvBestAlign2,
-                                  dataDir);
+                                  dataDir, countMatches);
 
       if(CH1Match[0] && CH2Match[0])
       {
          hingeScore  = ScanAgainstDB("hinges", seq, verbose, species,
                                      hingeMatch, hingeBestAlign1,
-                                     hingeBestAlign2, dataDir);
+                                     hingeBestAlign2, dataDir,
+                                     FALSE);
       }
       
       if(hvScore > THRESHOLD_HV)
@@ -378,19 +393,22 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
 #ifdef REMOVESEQS
          RemoveSequence(seq, hvBestAlign1, hvBestAlign2, verbose);
 #endif
-         PrintResult(out, "VH", hvScore, hvMatch);
+         PrintResult(out, "VH", hvScore, hvMatch, countMatches,
+                     GetAlignLen(hvBestAlign1, hvBestAlign2));
+
          if(showAlignment)
             PrintAlignment(out, hvBestAlign1, hvBestAlign2);
          
          hjScore = ScanAgainstDB("heavy_j", seq, verbose, species,
                                  hjMatch, bestAlign1, bestAlign2,
-                                 dataDir);
+                                 dataDir, countMatches);
          if(hjScore > THRESHOLD_HJ)
          {
 #ifdef REMOVESEQS
             RemoveSequence(seq, bestAlign1, bestAlign2, verbose);
 #endif
-            PrintResult(out, "JH", hjScore, hjMatch);
+            PrintResult(out, "JH", hjScore, hjMatch, countMatches,
+                        GetAlignLen(bestAlign1, bestAlign2));
             if(showAlignment)
                PrintAlignment(out, bestAlign1, bestAlign2);
 
@@ -402,35 +420,40 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
                DoDSegment(out, seq, species, dataDir,
                           hvBestAlign1, hvBestAlign2,  /* V             */
                           bestAlign1,   bestAlign2,    /* J             */
-                          verbose, showAlignment);
+                          verbose, showAlignment, countMatches);
             }
          }
       }
 
       if(CH1Score > THRESHOLD_HC)
       {
-         PrintResult(out, "CH1", CH1Score, CH1Match);
+         PrintResult(out, "CH1", CH1Score, CH1Match, countMatches,
+                     GetAlignLen(CH1BestAlign1, CH1BestAlign2));
+
          if(showAlignment)
             PrintAlignment(out, CH1BestAlign1, CH1BestAlign2);
       }
       
       if(hingeScore > THRESHOLD_HINGE)
       {
-         PrintResult(out, "HINGE", hingeScore, hingeMatch);
+         PrintResult(out, "HINGE", hingeScore, hingeMatch, FALSE, 1);
          if(showAlignment)
             PrintAlignment(out, hingeBestAlign1, hingeBestAlign2);
       }
       
       if(CH2Score > THRESHOLD_HC)
       {
-         PrintResult(out, "CH2", CH2Score, CH2Match);
+         PrintResult(out, "CH2", CH2Score, CH2Match, countMatches,
+                     GetAlignLen(CH2BestAlign1, CH2BestAlign2));
          if(showAlignment)
             PrintAlignment(out, CH2BestAlign1, CH2BestAlign2);
       }
       
       if(CH3CHSScore > THRESHOLD_HC)
       {
-         PrintResult(out, "CH3-CHS", CH3CHSScore, CH3CHSMatch);
+         PrintResult(out, "CH3-CHS", CH3CHSScore, CH3CHSMatch,
+                     countMatches,
+                     GetAlignLen(CH3BestAlign1, CH3BestAlign2));
          if(showAlignment)
             PrintAlignment(out, CH3BestAlign1, CH3BestAlign2);
       }
@@ -452,18 +475,19 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
 /************************************************************************/
 /*>REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, 
                       char *species, char *match, char *bestAlign1, 
-                      char *bestAlign2, char *dataDir)
+                      char *bestAlign2, char *dataDir, BOOL countMatches)
    -----------------------------------------------------------------------
 *//**
-   \param[in]  type       The database type against which we scan
-   \param[in]  theSeq     The sequences to test
-   \param[in]  verbose    Verbose output
-   \param[in]  species    "Homo", "Mus" or blank
-   \param[out] match      The best matching entry
-   \param[out] bestAlign1 The alignment of our sequence
-   \param[out] bestAlign2 The alignment of the database sequence
-   \param[in]  dataDir    Data directory
-   \return                The score for the match
+   \param[in]  type         The database type against which we scan
+   \param[in]  theSeq       The sequences to test
+   \param[in]  verbose      Verbose output
+   \param[in]  species      "Homo", "Mus" or blank
+   \param[out] match        The best matching entry
+   \param[out] bestAlign1   The alignment of our sequence
+   \param[out] bestAlign2   The alignment of the database sequence
+   \param[in]  dataDir      Data directory
+   \param[in]  countMatches Do simple number of matches scoring
+   \return                  The score for the match
 
    Scans a sequence against the specified database.
 
@@ -471,10 +495,11 @@ void ProcessSeq(FILE *out, char *seq, BOOL verbose, BOOL showAlignment,
    - 11.06.21 Added USEPATH code
    - 13.06.22 Added window size of 2 for C regions and 10 for others
    - 19.03.25 Initialize match
+   - 04.08.26 Added countMatches
 */
 REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
                    char *match, char *bestAlign1, char *bestAlign2,
-                   char *dataDir)
+                   char *dataDir, BOOL countMatches)
 {
    char        filename[MAXBUFF+1],
                bestMatch[MAXBUFF+1];
@@ -558,7 +583,7 @@ REAL ScanAgainstDB(char *type, char *theSeq, BOOL verbose, char *species,
             }
             
             score = CompareSeqs(theSeq, seq, window, align1, align2,
-                                noScale);
+                                noScale, countMatches);
             dbLen = CalculateDbLen(align2);
 
 #ifdef DEBUG
@@ -784,25 +809,29 @@ void GetDomainID(char *header, char *id, int maxbuff)
 
 /************************************************************************/
 /*>REAL CompareSeqs(char *theSeq, char *seq, int window, 
-                    char *align1, char *align2, BOOL noScale)
+                    char *align1, char *align2, BOOL noScale,
+                    BOOL countMatches)
    ---------------------------------------------------------------------
 *//**
-   \param[in]   theSeq   the sequence of interest
-   \param[in]   seq      the database sequence
-   \param[in]   window   Window size
-   \param[out]  align1   Alignment of our sequence
-   \param[out]  align2   Alignment of database sequence
-   \param[in]   noScale  Don't scale score by length (for D-segment)
-   \return               Score for alignment
+   \param[in]   theSeq       the sequence of interest
+   \param[in]   seq          the database sequence
+   \param[in]   window       Window size
+   \param[out]  align1       Alignment of our sequence
+   \param[out]  align2       Alignment of database sequence
+   \param[in]   noScale      Don't scale score by length (for D-segment)
+   \param[in]   countMatches Do simple match count scoring
+   \return                   Score for alignment
 
    - 31.03.20 Original   By: ACRM
    - 13.06.22 Changed to use a window in the alignment to speed it up
               Added window size as a parameter
    - 26.04.23 Added noScale
    - 27.04.23 Changed extension penalty from 5 to 1
+   - 04.08.26 Added countMatches
 */
 REAL CompareSeqs(char *theSeq, char *seq, int window,
-                 char *align1, char *align2, BOOL noScale)
+                 char *align1, char *align2, BOOL noScale,
+                 BOOL countMatches)
 {
    int  score;
    int  alignLen;
@@ -820,6 +849,16 @@ REAL CompareSeqs(char *theSeq, char *seq, int window,
                                &alignLen);
    align1[alignLen] = align2[alignLen] = '\0';
 
+   if(countMatches)
+   {
+      score = doCountMatches(align1, align2);
+#ifdef DEBUG   
+      fprintf(stderr, "\n>>>%s\n", align1);
+      fprintf(stderr, ">>>%s %d\n", align2, score);
+#endif
+      return((REAL)score);
+   }
+   
    shortSeqLen = CalcShortSeqLen(align1, align2);
 
 #ifdef DEBUG   
@@ -833,6 +872,19 @@ REAL CompareSeqs(char *theSeq, char *seq, int window,
    return((REAL)score / (REAL)shortSeqLen);
 }
 
+
+/************************************************************************/
+int doCountMatches(char *align1, char *align2)
+{
+   int i,
+       score = 0;
+   for(i=0; i<strlen(align1); i++)
+   {
+      if(align1[i] == align2[i])
+         score++;
+   }
+   return(score);
+}
 
 /************************************************************************/
 int CalcShortSeqLen(char *align1, char *align2)
@@ -882,16 +934,18 @@ int CalcShortSeqLen(char *align1, char *align2)
 -  26.04.23 V1.6
 -  22.02.24 V1.7
 -  19.03.25 V1.8
+-  04.08.26 V1.9 Added -c
 */
 void Usage(void)
 {
-   printf("\nagl V1.8 (c) 2020-25 UCL, Prof. Andrew C.R. Martin\n\n");
+   printf("\nagl V1.9 (c) 2020-26 UCL, Prof. Andrew C.R. Martin\n\n");
 
-   printf("Usage: agl [-H|-L] [-D] [-s species] [-d datadir] [-v] [-a] \
-[file.faa [out.txt]]\n");
+   printf("Usage: agl [-H|-L] [-D] [-s species] [-d datadir] [-c] [-v] \
+[-a] [file.faa [out.txt]]\n");
    printf("           -H Heavy chain\n");
    printf("           -L Light chain\n");
    printf("           -D Do the D-segment with heavy chains\n");
+   printf("           -c Score just by counting matches\n");
    printf("           -s Specify a species (Homo or Mus)\n");
    printf("           -d Specify data directory\n");
    printf("           -v Verbose\n");
@@ -928,7 +982,7 @@ specified using the\n");
 /*>BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                      BOOL *verbose, BOOL *showAlignment, 
                      int *chainType, char *species, char *dataDir,
-                     BOOL *doDSegment)
+                     BOOL *doDSegment, BOOL *countMatches)
    ---------------------------------------------------------------------
 *//**
    \param[in]   argc           Argument count
@@ -941,6 +995,7 @@ specified using the\n");
    \param[out]  *species       Species or blank string
    \param[out]  *dataDir       Data directory or blank string
    \param[out]  *doDSegment    Handle the D segment for heavy chains
+   \param[out]  *countMatches  Do simple match count scoring
    \return                     Success
 
    Parse the command line
@@ -951,7 +1006,7 @@ specified using the\n");
 BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
                   BOOL *verbose, BOOL *showAlignment, int *chainType,
                   char *species, char *dataDir,
-                  BOOL *doDSegment)
+                  BOOL *doDSegment, BOOL *countMatches)
 {
    argc--;
    argv++;
@@ -998,6 +1053,9 @@ BOOL ParseCmdLine(int argc, char **argv, char *infile, char *outfile,
             if(!argc)
                return(FALSE);
             strncpy(dataDir, argv[0], MAXBUFF);
+            break;
+         case 'c':
+            *countMatches = TRUE;
             break;
          default:
             return(FALSE);
@@ -1125,19 +1183,24 @@ void RemoveSequence(char *seq, char *align1, char *align2, BOOL verbose)
 
 
 /************************************************************************/
-/*>void PrintResult(FILE *out, char *domain, REAL score, char *match)
+/*>void PrintResult(FILE *out, char *domain, REAL score, char *match,
+                    BOOL countMatches, int alignLen)
    ------------------------------------------------------------------
 *//**
-   \param[in]   out        Output file pointer
-   \param[in]   domain     Domain label
-   \param[in]   score      Score for match
-   \param[in]   match      Match FASTA header
+   \param[in]   out          Output file pointer
+   \param[in]   domain       Domain label
+   \param[in]   score        Score for match
+   \param[in]   match        Match FASTA header
+   \param[in]   countMatches Adjust scoring if doing a match score
+   \param[in]   alignLen     Used to adjust scoring if doing a match score
 
    Prints the match information
 
    - 31.03.20 Original   By: ACRM
+   - 04.08.26 Added countMatches handling
 */
-void PrintResult(FILE *out, char *domain, REAL score, char *match)
+void PrintResult(FILE *out, char *domain, REAL score, char *match,
+                 BOOL countMatches, int alignLen)
 {
    char id[LABELBUFF],
         frame[LABELBUFF],
@@ -1156,7 +1219,10 @@ void PrintResult(FILE *out, char *domain, REAL score, char *match)
    match = strchr(match, '_');
    match++;
    strncpy(species, match, LABELBUFF-1);
-   
+
+   if(countMatches)
+      score /= (REAL)alignLen;
+
    fprintf(out, "%-7s : %6.2f%% : %-12s : %s : %s\n",
            domain, 100.0*score, id, frame, species);
 }
@@ -1230,7 +1296,7 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
 /*>void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
                    char *hvBestAlign1, char *hvBestAlign2, 
                    char *hjBestAlign1, char *hjBestAlign2,
-                   BOOL verbose, BOOL showAlignment)
+                   BOOL verbose, BOOL showAlignment, BOOL countMatches)
 *//**
    \param[in]     *out           Output file pointer
    \param[in,out] *seq           Sequence to analyze
@@ -1247,12 +1313,13 @@ void PrintAlignment(FILE *out, char *inAlign1, char *inAlign2)
    regions, then this does so and extracts just the region between
    V and J since this is so short.
 
--  26.04.23 Original   By: ACRM   
+-  26.04.23 Original   By: ACRM
+-  04.08.26 Added countMatches
 */
 void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
                 char *hvBestAlign1, char *hvBestAlign2, 
                 char *hjBestAlign1, char *hjBestAlign2,
-                BOOL verbose, BOOL showAlignment)
+                BOOL verbose, BOOL showAlignment, BOOL countMatches)
 {
    char        hdMatch[MAXBUFF+1],
                DSeq[MAXBUFF+1];
@@ -1269,13 +1336,14 @@ void DoDSegment(FILE *out, char *seq, char *species, char *dataDir,
    
    hdScore = ScanAgainstDB("heavy_d", DSeq, verbose, species,
                            hdMatch, bestAlign1, bestAlign2,
-                           dataDir);
+                           dataDir, countMatches);
 
    if(hdScore > THRESHOLD_HD)
    {
       int alnLength = CalcShortSeqLen(bestAlign1, bestAlign2);
       
-      PrintResult(out, "DH", hdScore/(REAL)alnLength, hdMatch);
+      PrintResult(out, "DH", hdScore/(REAL)alnLength, hdMatch,
+                  countMatches, GetAlignLen(bestAlign1, bestAlign2));
       if(showAlignment)
          PrintAlignment(out, bestAlign1, bestAlign2);
    }
@@ -1413,6 +1481,48 @@ char *FindPath(void)
   }
 
   return(NULL);
+}
+
+/************************************************************************/
+/*>void GetAlignLen(char *inAlign1, char *inAlign2)
+   --------------------------------------------------------------
+*//**
+   \param[in]   *inAlign1  Aligned sequence 1
+   \param[in]   *inAlign2  Aligned sequence 2
+
+   Calculated the length of the aligned region
+
+-  04.08.26 Original   By: ACRM
+*/
+int GetAlignLen(char *inAlign1, char *inAlign2)
+{
+   char align1[HUGEBUFF+1],
+        align2[HUGEBUFF+1],
+        *aln1,
+        *aln2;
+   int  i;
+   
+   strncpy(align1, inAlign1, HUGEBUFF);
+   strncpy(align2, inAlign2, HUGEBUFF);
+   aln1=align1+strlen(align1)-1;
+   aln2=align2+strlen(align2)-1;
+   while((*aln1 == '-')  || (*aln2 == '-'))
+   {
+      aln1--;
+      aln2--;
+   }
+   *(aln1+1)='\0';
+   *(aln2+1)='\0';
+
+   aln1=align1;
+   aln2=align2;
+   while((*aln1 == '-')||(*aln2 == '-'))
+   {
+      aln1++;
+      aln2++;
+   }
+
+   return(strlen(aln1));
 }
 
 /************************************************************************/
